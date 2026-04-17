@@ -47,7 +47,14 @@ Issue tracking in this template is done with [`bd`](https://github.com/steveyegg
   ```bash
   bd init
   ```
-  This scaffolds `.beads/` and injects a BEADS-INTEGRATION comment block into this file (the canonical `AGENTS.md`; `CLAUDE.md` symlinks to it). If `bd init` detects existing bd content it will preserve it rather than overwriting.
+  This scaffolds `.beads/` (local only — `.beads/` is git-ignored by the template) and injects a BEADS-INTEGRATION comment block into this file (the canonical `AGENTS.md`; `CLAUDE.md` symlinks to it). If `bd init` detects existing bd content it will preserve it rather than overwriting.
+- [ ] **Configure the Dolt sync remote.** `bd init` auto-detects a git remote if one is already configured on the repo and wires it as the Dolt `origin` remote (this is what makes `bd dolt push` work). Verify or fix:
+  ```bash
+  bd dolt remote list                                  # should show 'origin' with your repo URL
+  # If empty or wrong, add/replace it:
+  bd dolt remote add origin <your-git-url-here>        # e.g. git+ssh://git@github.com/<you>/<repo>.git
+  ```
+  Do NOT commit `.beads/config.yaml` — it contains your per-project `sync.remote` URL and would leak if the template repo were reused.
 - [ ] (Recommended) Install bd git hooks so `bd prime` context auto-injects at session start:
   ```bash
   bd hooks install

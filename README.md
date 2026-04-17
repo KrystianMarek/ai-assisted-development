@@ -6,7 +6,7 @@ A **project template** for starting new repositories that will be built collabor
 
 - **`doc/` tree** with nine canonical subdirectories, each seeded with a `README.md` that explains its purpose, naming rules, template for new entries, and an index of its contents.
 - **`AGENTS.md`** — the single source of truth for agent behaviour, covering documentation placement, `bd` (beads) issue tracking with semantic IDs, multi-agent worktree workflow, and the eight-step *Landing the Plane* session-completion protocol. `CLAUDE.md` is a symlink to it so Claude Code reads the same instructions as every other agent.
-- **`bd` issue-tracking scaffold** (`.beads/` directory) — dependency-aware, AI-native ticket tracker with git-native merge semantics via Dolt. Hooks auto-inject context on session start.
+- **`bd` issue-tracking ready-to-provision** — dependency-aware, AI-native ticket tracker with git-native merge semantics via Dolt. The template does not ship a pre-initialised `.beads/` database (that directory is per-project and contains your own sync-remote URL); the `AGENTS.md` initialization checklist walks you through `bd init`, Dolt remote setup, and the hook-ordering fix. `.claude/settings.json` pre-wires `bd prime` as a `SessionStart`/`PreCompact` hook so workflow context auto-injects once bd is initialised.
 - **Pre-commit quality gates** (`.pre-commit-config.yaml` + `.markdownlint.yaml`) — language-agnostic defaults (whitespace, EOF, merge-conflict, YAML, markdown) that enforce the *"work is not complete until `git push` succeeds"* rule before a commit can land.
 - **Multi-agent-friendly workflow** — embraces `bd worktree create` so several agents can work in parallel on independent tickets without stomping on each other's working tree.
 
@@ -28,8 +28,9 @@ A **project template** for starting new repositories that will be built collabor
 ├── CLAUDE.md              # -> AGENTS.md (symlink)
 ├── .pre-commit-config.yaml
 ├── .markdownlint.yaml
-├── .beads/                # bd issue tracker database + hooks
 ├── .claude/settings.json  # SessionStart/PreCompact hooks running `bd prime`
+├── .gitignore             # Excludes .beads/, .remember/, local Claude settings, Dolt blobs
+# .beads/                  # NOT in template — created locally by `bd init` during bootstrap
 └── doc/
     ├── architecture/      # System design and component diagrams
     ├── benchmarks/        # E2E verification scenarios, benchmark results
