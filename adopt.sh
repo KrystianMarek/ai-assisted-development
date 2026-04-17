@@ -5,9 +5,12 @@ set -euo pipefail
 
 # shellcheck disable=SC2034  # used by copy_template_files (Task 5)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC2034  # used by validate_target (Task 4)
 TARGET="${PWD}"
+# shellcheck disable=SC2034  # used by set_role (Task 9)
 ROLE="maintainer"
 DRY_RUN=0
+# shellcheck disable=SC2034  # used by copy_template_files (Task 5)
 FORCE=0
 
 usage() {
@@ -25,11 +28,14 @@ EOF
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --target)  [[ $# -ge 2 ]] || { echo "--target requires DIR" >&2; exit 2; }
+               # shellcheck disable=SC2034  # used by validate_target (Task 4)
                TARGET="$2"; shift 2 ;;
     --role)    [[ $# -ge 2 ]] || { echo "--role requires ROLE" >&2; exit 2; }
+               # shellcheck disable=SC2034  # used by set_role (Task 9)
                ROLE="$2"; shift 2 ;;
     --dry-run) DRY_RUN=1;    shift ;;
-    --force)   FORCE=1;      shift ;;
+    --force)   # shellcheck disable=SC2034  # used by copy_template_files (Task 5)
+               FORCE=1;      shift ;;
     --help|-h) usage; exit 0 ;;
     *) echo "unknown flag: $1" >&2; usage; exit 2 ;;
   esac
