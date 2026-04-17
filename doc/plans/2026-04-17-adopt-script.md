@@ -349,6 +349,8 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
 
   ```bash
   install_precommit() {
+    [[ -f "$TARGET/.pre-commit-config.yaml" ]] \
+      || { echo "no .pre-commit-config.yaml in $TARGET — copy_template_files must run first" >&2; return 1; }
     if [[ "$DRY_RUN" == 1 ]]; then
       printf 'DRY: (cd %q && pre-commit install)\n' "$TARGET"
       return 0

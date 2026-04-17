@@ -83,6 +83,8 @@ copy_template_files() {
 }
 
 install_precommit() {
+  [[ -f "$TARGET/.pre-commit-config.yaml" ]] \
+    || { echo "no .pre-commit-config.yaml in $TARGET — copy_template_files must run first" >&2; return 1; }
   if [[ "$DRY_RUN" == 1 ]]; then
     printf 'DRY: (cd %q && pre-commit install)\n' "$TARGET"
     return 0
