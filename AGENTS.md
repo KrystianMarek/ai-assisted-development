@@ -264,9 +264,10 @@ Examples:
 # Epic
 bd create "Expose Terraform errors to conditions" --id infra-tferrors --type epic
 
-# Task under epic
+# Task under epic (--id and --parent cannot be combined; create then link)
 bd create "Phase 1: enable log subresource" \
-  --id infra-tferrors-logsub --type task --parent infra-tferrors
+  --id infra-tferrors-logsub --type task
+bd dep add infra-tferrors-logsub infra-tferrors --type parent-child
 
 # Standalone task
 bd create "Allow blueprints to run in plan-only mode" \
@@ -295,6 +296,7 @@ Why: semantic IDs give agents and humans instant context without a `bd show`, an
 - **`bd prime` requires the Dolt server running.** The `.claude/settings.json` hooks fire `bd prime` on SessionStart and PreCompact. If the Dolt server isn't up, the hook will error. Start it with `bd dolt start` if you see "Dolt server unreachable" errors at session start.
 - **After `bd bootstrap`, restart the Dolt server.** The server doesn't detect newly cloned databases — run `bd dolt stop && bd dolt start` after bootstrap.
 - **Never close a ticket with incomplete work** unless the deferred items are captured in NEW tickets with full context (what was learned, what remains, why deferred, acceptance criteria). Vague "deferred" comments with no follow-up ticket are how work gets lost.
+- **`--id` and `--parent` cannot be combined** on `bd create`. Create the task with `--id` first, then link it: `bd dep add CHILD EPIC --type parent-child`.
 - If the Dolt server is stuck: `bd dolt set port <new_port>` then `bd dolt start`. Check with `lsof -i :<port>`.
 
 ### Integration Rules
