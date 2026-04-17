@@ -89,9 +89,11 @@ install_precommit() {
     printf 'DRY: (cd %q && pre-commit install)\n' "$TARGET"
     return 0
   fi
-  # pre-commit install refuses when core.hooksPath is set (bd init sets it to
-  # .beads/hooks on first run). If .beads/hooks/pre-commit is already in place,
-  # the hook chain is working — treat the refusal as a successful no-op.
+  # pre-commit install refuses when core.hooksPath is set. bd_init (called
+  # after this function in main) sets it to .beads/hooks on first run, so on
+  # re-runs pre-commit install returns non-zero. If .beads/hooks/pre-commit
+  # is already in place, the hook chain is working — treat the refusal as a
+  # successful no-op.
   local rc=0
   (cd "$TARGET" && pre-commit install >/dev/null) || rc=$?
   if [[ $rc -ne 0 && -f "$TARGET/.beads/hooks/pre-commit" ]]; then
