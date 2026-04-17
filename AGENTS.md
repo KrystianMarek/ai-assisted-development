@@ -59,7 +59,7 @@ If the user prefers another runner (`prek`, `husky`, `lefthook`), swap it in —
 
 ### 3. Install and initialize `bd` (beads)
 
-Issue tracking in this template is done with [`bd`](https://github.com/steveyegge/beads). It must be on `PATH` before any issues are created.
+Issue tracking in this template is done with [`bd`](https://github.com/gastownhall/beads). It must be on `PATH` before any issues are created.
 
 **Action:**
 
@@ -69,9 +69,9 @@ Issue tracking in this template is done with [`bd`](https://github.com/steveyegg
   ```
 - [ ] If the command is empty, **ask the user for permission to install**, then run:
   ```bash
-  curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/gastownhall/beads/main/scripts/install.sh | bash
   ```
-  Reference: <https://github.com/steveyegge/beads>
+  Reference: <https://github.com/gastownhall/beads>
 - [ ] **Initialize the database** — choose the right command for your situation:
 
   **New project (no existing Dolt data in the git remote):**
@@ -199,7 +199,7 @@ doc/
 
 ## Issue Tracking with `bd` (beads)
 
-This project uses [`bd`](https://github.com/steveyegge/beads) for issue tracking — a dependency-aware, AI-native tracker where issues live in a Dolt database in `.beads/` at the project root.
+This project uses [`bd`](https://github.com/gastownhall/beads) for issue tracking — a dependency-aware, AI-native tracker where issues live in a Dolt database in `.beads/` at the project root.
 
 ### Quick Reference
 

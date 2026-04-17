@@ -226,7 +226,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
     command -v git         >/dev/null 2>&1 || missing+=("git")
     command -v pre-commit  >/dev/null 2>&1 || missing+=("pre-commit (install: pip install pre-commit  OR  uv tool install pre-commit)")
     command -v dolt        >/dev/null 2>&1 || missing+=("dolt (install: see https://docs.dolthub.com/introduction/installation)")
-    command -v bd          >/dev/null 2>&1 || missing+=("bd (install: curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash)")
+    command -v bd          >/dev/null 2>&1 || missing+=("bd (install: curl -fsSL https://raw.githubusercontent.com/gastownhall/beads/main/scripts/install.sh | bash)")
     if (( ${#missing[@]} > 0 )); then
       printf 'Missing prerequisites:\n' >&2
       printf '  - %s\n' "${missing[@]}" >&2
