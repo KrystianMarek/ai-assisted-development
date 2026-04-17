@@ -5,7 +5,6 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET="${PWD}"
-# shellcheck disable=SC2034  # used by set_role (Task 9)
 ROLE="maintainer"
 DRY_RUN=0
 FORCE=0
@@ -27,7 +26,6 @@ while [[ $# -gt 0 ]]; do
     --target)  [[ $# -ge 2 ]] || { echo "--target requires DIR" >&2; exit 2; }
                TARGET="$2"; shift 2 ;;
     --role)    [[ $# -ge 2 ]] || { echo "--role requires ROLE" >&2; exit 2; }
-               # shellcheck disable=SC2034  # used by set_role (Task 9)
                ROLE="$2"; shift 2 ;;
     --dry-run) DRY_RUN=1;    shift ;;
     --force)   FORCE=1;      shift ;;
@@ -132,6 +130,28 @@ wire_bd_hook() {
   git -C "$TARGET" config --unset core.hooksPath 2>/dev/null || true
 }
 
+set_role() {
+  run git -C "$TARGET" config beads.role "$ROLE"
+}
+
+report_next_steps() {
+  cat <<EOF
+
+Adoption complete. Manual follow-ups:
+
+  1. Edit $TARGET/AGENTS.md — replace the Project Overview placeholder and
+     populate Development Conventions. Delete the Project Initialization
+     Checklist section when you are done.
+  2. Replace $TARGET/README.md with a README describing the new project
+     (the template's README is about the template itself).
+  3. Commit, then:
+       git -C $TARGET push -u origin main
+       (cd $TARGET && bd dolt push)
+
+Run ./adopt.sh --help to see all flags.
+EOF
+}
+
 bd_init() {
   # bd init on a template-fresh AGENTS.md may panic in updateAgentFile while
   # injecting the BEADS-INTEGRATION marker region (upstream bug). We accept
@@ -163,7 +183,8 @@ main() {
   install_precommit
   bd_init
   wire_bd_hook
-  echo "TODO: role"
+  set_role
+  report_next_steps
 }
 
 main
