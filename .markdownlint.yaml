@@ -1,0 +1,33 @@
+# Lenient markdownlint config — this repo leans on narrative docs,
+# so we disable rules that fight common prose/template patterns.
+default: true
+
+# Line length: allow long lines (prose + table rows)
+MD013: false
+
+# Allow duplicate headings in different sections (e.g. "Related" repeated per README)
+MD024:
+  siblings_only: true
+
+# Allow inline HTML (we use <!-- BEGIN BEADS INTEGRATION --> markers, comments, etc.)
+MD033: false
+
+# Allow bare URLs in code/examples
+MD034: false
+
+# Don't require first line to be a top-level heading (some files start with frontmatter)
+MD041: false
+
+# Allow emphasis-only lines (we use them as pseudo-subheadings in templates)
+MD036: false
+
+# Don't require blank lines around fenced code blocks / lists
+MD031: false
+MD032: false
+
+# Don't require language hints on every fenced block (example output, etc.)
+MD040: false
+
+# Accept either asterisk or underscore emphasis — authoring style varies
+MD049: false
+MD050: false

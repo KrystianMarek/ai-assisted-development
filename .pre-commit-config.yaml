@@ -1,0 +1,22 @@
+# Keep this minimal and language-agnostic — this repo is a template.
+# Projects scaffolded from it should ADD language-specific linters
+# (ruff / golangci-lint / eslint / biome / etc.) appropriate to their stack.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.41.0
+    hooks:
+      - id: markdownlint
+        args: [--config, .markdownlint.yaml]
+        # .beads/ is managed by the bd tool; don't enforce our style on its docs.
+        exclude: ^\.beads/
