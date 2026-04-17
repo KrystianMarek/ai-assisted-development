@@ -4,10 +4,10 @@
 
 ## What `adopt.sh` does
 
-- Copies `AGENTS.md`, `.pre-commit-config.yaml`, `CLAUDE.md` symlink, and `doc/` scaffolding to your target repository.
+- Copies all tracked files from the template repository to your target (via `git archive HEAD | tar -x`), including `AGENTS.md`, `.pre-commit-config.yaml`, `CLAUDE.md` symlink, `.claude/settings.json`, and `doc/` scaffolding.
 - Installs and registers pre-commit hooks (with verification).
 - Initializes the Dolt database for `bd` issue tracking and runs `bd init`.
-- Wires `bd` hooks into `.git/hooks/pre-commit` and configures `.claude/settings.json` with `bd prime`.
+- Wires `bd` hooks into `.git/hooks/pre-commit` by merging the BEADS integration block from `.beads/hooks/pre-commit`.
 
 ## What it skips (manual steps)
 
@@ -36,6 +36,4 @@ If the output looks correct, run without `--dry-run` to execute.
 
 ## Extending `adopt.sh` when the template grows
 
-If new files or directories are added to the template that should be copied during adoption, edit `adopt.sh` and add them to the `FILES_TO_COPY` list near the top of the script. Follow the pattern already in place: local path relative to the template root, and target path (usually the same).
-
-All other wiring (pre-commit, `bd`, hooks) is driven by the same logic — no changes needed unless the bootstrap ceremony itself changes.
+New tracked files in the template are automatically copied by `git archive HEAD` on the next adoption run — **no edit to `adopt.sh` is needed**. Changes to `adopt.sh` are only required when introducing a new *setup step* (not a new file). In that case, write a new function and call it from `main()` in the appropriate order.
