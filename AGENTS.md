@@ -8,6 +8,8 @@ This file provides guidance to any agent working in this repository — Claude C
 
 ## ⏱️ Project Initialization Checklist — REMOVE THIS SECTION AFTER COMPLETION
 
+> **Shortcut:** from a checkout of this template, run `./adopt.sh --target /path/to/your/repo` to automate steps 1–5 below. Steps 6 (Project Overview, Dev Conventions, delete this checklist) are still manual. The manual walkthrough remains authoritative if anything in `adopt.sh` fails.
+
 This section is **temporal**: it runs once, when the project is first cloned or scaffolded from this template. Work through it with the user, tick each box, and **delete this whole section from AGENTS.md** when finished so it does not nag every subsequent session.
 
 ### 1. Install git pre-commit hooks
