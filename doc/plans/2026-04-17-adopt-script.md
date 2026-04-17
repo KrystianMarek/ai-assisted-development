@@ -304,13 +304,24 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
   ```bash
   copy_template_files() {
     # git archive only includes tracked files and preserves the CLAUDE.md symlink.
-    # tar -k keeps existing files so a re-run does not clobber a filled-in AGENTS.md.
-    # --force (FORCE=1) drops -k to pick up upstream template updates.
-    local keep="-k"
-    [[ "$FORCE" == 1 ]] && keep=""
-    run bash -c "git -C '$SCRIPT_DIR' archive HEAD | tar -x $keep -C '$TARGET'"
+    # --skip-old-files silently skips existing files and exits 0, so re-runs do not
+    # clobber a filled-in AGENTS.md and do not trip `set -euo pipefail`. (tar -k
+    # also keeps files but exits 2 on conflict — unsafe for idempotent re-runs.)
+    # --force (FORCE=1) drops the flag to resync with upstream template changes.
+    local -a tar_cmd=(tar -x)
+    [[ "$FORCE" == 1 ]] || tar_cmd+=(--skip-old-files)
+    tar_cmd+=(-C "$TARGET")
+    if [[ "$DRY_RUN" == 1 ]]; then
+      printf 'DRY: git -C %q archive HEAD |' "$SCRIPT_DIR"
+      printf ' %q' "${tar_cmd[@]}"
+      printf '\n'
+      return 0
+    fi
+    git -C "$SCRIPT_DIR" archive HEAD | "${tar_cmd[@]}"
   }
   ```
+
+  > Rationale for not using `run bash -c "..."`: embedding `$TARGET` into a single-quoted bash-c string is injection-vulnerable for paths containing a literal `'` and forces the `run` wrapper to `%q`-escape the whole pipeline in dry-run output, which is unreadable. Direct pipeline execution with quoted variables is safer and clearer. Apply the same pattern in Tasks 6 and 8.
 
 - [ ] **Step 2: Call it, commit**
 
@@ -338,24 +349,15 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
 
   ```bash
   install_precommit() {
-    run pre-commit install --config "$TARGET/.pre-commit-config.yaml" \
-        --hook-type pre-commit \
-        --overwrite \
-        --allow-missing-config >/dev/null
-    # pre-commit install needs to run in the repo; set cwd via --hook-type semantics:
-    # the --config path above does the trick without changing cwd in dry-run.
+    if [[ "$DRY_RUN" == 1 ]]; then
+      printf 'DRY: (cd %q && pre-commit install)\n' "$TARGET"
+      return 0
+    fi
+    (cd "$TARGET" && pre-commit install >/dev/null)
   }
   ```
 
-  Actually simpler — run in a subshell that `cd`s:
-
-  ```bash
-  install_precommit() {
-    run bash -c "cd '$TARGET' && pre-commit install >/dev/null"
-  }
-  ```
-
-  Keep the second form in the script.
+  > Uses a subshell `(cd … && …)` rather than `run bash -c "cd '$TARGET' && …"` — same rationale as Task 5: avoids shell injection through `$TARGET` and keeps dry-run output readable.
 
 - [ ] **Step 2: Call + commit**
 

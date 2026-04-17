@@ -67,11 +67,19 @@ validate_target() {
 
 copy_template_files() {
   # git archive only includes tracked files and preserves the CLAUDE.md symlink.
-  # tar -k keeps existing files so a re-run does not clobber a filled-in AGENTS.md.
-  # --force (FORCE=1) drops -k to pick up upstream template updates.
-  local keep="-k"
-  [[ "$FORCE" == 1 ]] && keep=""
-  run bash -c "git -C '$SCRIPT_DIR' archive HEAD | tar -x $keep -C '$TARGET'"
+  # --skip-old-files silently skips existing files and exits 0, so re-runs do not
+  # clobber a filled-in AGENTS.md and do not trip `set -euo pipefail`.
+  # --force (FORCE=1) drops the flag to resync with upstream template changes.
+  local -a tar_cmd=(tar -x)
+  [[ "$FORCE" == 1 ]] || tar_cmd+=(--skip-old-files)
+  tar_cmd+=(-C "$TARGET")
+  if [[ "$DRY_RUN" == 1 ]]; then
+    printf 'DRY: git -C %q archive HEAD |' "$SCRIPT_DIR"
+    printf ' %q' "${tar_cmd[@]}"
+    printf '\n'
+    return 0
+  fi
+  git -C "$SCRIPT_DIR" archive HEAD | "${tar_cmd[@]}"
 }
 
 main() {
