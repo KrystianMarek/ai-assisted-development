@@ -190,9 +190,10 @@ Examples:
 # Epic
 bd create "Expose Terraform errors to conditions" --id infra-tferrors --type epic
 
-# Task under epic
+# Task under epic (--id and --parent cannot be combined; create then link)
 bd create "Phase 1: enable log subresource" \
-  --id infra-tferrors-logsub --type task --parent infra-tferrors
+  --id infra-tferrors-logsub --type task
+bd dep add infra-tferrors-logsub infra-tferrors --type parent-child
 
 # Standalone task
 bd create "Allow blueprints to run in plan-only mode" \
@@ -219,6 +220,7 @@ Why: semantic IDs give agents and humans instant context without a `bd show`, an
 - `bd ready` shows a tree by default (`--pretty` is the default); pass `--plain` for a numbered list.
 - `bd dolt push` takes **no positional args** — the remote is configured once via `bd dolt remote add`.
 - **Never close a ticket with incomplete work** unless the deferred items are captured in NEW tickets with full context (what was learned, what remains, why deferred, acceptance criteria). Vague "deferred" comments with no follow-up ticket are how work gets lost.
+- **`--id` and `--parent` cannot be combined** on `bd create`. Create the task with `--id` first, then link it: `bd dep add CHILD EPIC --type parent-child`.
 - If the Dolt server is stuck: `bd dolt set port <new_port>` then `bd dolt start`. Check with `lsof -i :<port>`.
 
 ### Integration Rules
