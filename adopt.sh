@@ -83,23 +83,22 @@ copy_template_files() {
 }
 
 install_precommit() {
-  [[ -f "$TARGET/.pre-commit-config.yaml" ]] \
-    || { echo "no .pre-commit-config.yaml in $TARGET — copy_template_files must run first" >&2; return 1; }
   if [[ "$DRY_RUN" == 1 ]]; then
     printf 'DRY: (cd %q && pre-commit install)\n' "$TARGET"
     return 0
   fi
-  # pre-commit install refuses when core.hooksPath is set. bd_init (called
-  # after this function in main) sets it to .beads/hooks on first run, so on
-  # re-runs pre-commit install returns non-zero. If .beads/hooks/pre-commit
-  # is already in place, the hook chain is working — treat the refusal as a
-  # successful no-op.
-  local rc=0
-  (cd "$TARGET" && pre-commit install >/dev/null) || rc=$?
-  if [[ $rc -ne 0 && -f "$TARGET/.beads/hooks/pre-commit" ]]; then
+  [[ -f "$TARGET/.pre-commit-config.yaml" ]] \
+    || { echo "no .pre-commit-config.yaml in $TARGET — copy_template_files must run first" >&2; return 1; }
+  # Skip if the hook already has the BEADS merge (wire_bd_hook ran in a prior
+  # adopt.sh invocation). Without this guard, pre-commit install would clobber
+  # the merged hook with the plain framework template, forcing wire_bd_hook to
+  # re-merge on every re-run.
+  if [[ -f "$TARGET/.git/hooks/pre-commit" ]] \
+    && grep -q "BEGIN BEADS INTEGRATION" "$TARGET/.git/hooks/pre-commit"; then
+    echo "pre-commit hook already merged with BEADS in $TARGET, skipping pre-commit install"
     return 0
   fi
-  return $rc
+  (cd "$TARGET" && pre-commit install >/dev/null)
 }
 
 wire_bd_hook() {
