@@ -92,12 +92,37 @@ install_precommit() {
   (cd "$TARGET" && pre-commit install >/dev/null)
 }
 
+bd_init() {
+  # bd init on a template-fresh AGENTS.md may panic in updateAgentFile while
+  # injecting the BEADS-INTEGRATION marker region (upstream bug). We accept
+  # partial success: .beads/config.yaml + .beads/hooks/pre-commit must exist.
+  if [[ -f "$TARGET/.beads/config.yaml" ]]; then
+    echo "bd already initialised in $TARGET, skipping bd init"
+    return 0
+  fi
+  if [[ "$DRY_RUN" == 1 ]]; then
+    printf 'DRY: (cd %q && bd init)\n' "$TARGET"
+    return 0
+  fi
+  local rc=0
+  (cd "$TARGET" && bd init) || rc=$?
+  if [[ $rc -ne 0 ]]; then
+    if [[ -f "$TARGET/.beads/config.yaml" && -f "$TARGET/.beads/hooks/pre-commit" ]]; then
+      echo "WARN: 'bd init' exited $rc but critical files are in place. Known bug: updateAgentFile panic on template-fresh AGENTS.md." >&2
+    else
+      echo "bd init failed ($rc) and no .beads state was produced — aborting." >&2
+      return $rc
+    fi
+  fi
+}
+
 main() {
   require_prereqs
   validate_target
   copy_template_files
   install_precommit
-  echo "TODO: bd"
+  bd_init
+  echo "TODO: wire bd hook + role"
 }
 
 main
