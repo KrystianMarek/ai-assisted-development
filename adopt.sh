@@ -3,13 +3,11 @@
 # See ./AGENTS.md → "Project Initialization Checklist" for the manual equivalent.
 set -euo pipefail
 
-# shellcheck disable=SC2034  # used by copy_template_files (Task 5)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET="${PWD}"
 # shellcheck disable=SC2034  # used by set_role (Task 9)
 ROLE="maintainer"
 DRY_RUN=0
-# shellcheck disable=SC2034  # used by copy_template_files (Task 5)
 FORCE=0
 
 usage() {
@@ -32,8 +30,7 @@ while [[ $# -gt 0 ]]; do
                # shellcheck disable=SC2034  # used by set_role (Task 9)
                ROLE="$2"; shift 2 ;;
     --dry-run) DRY_RUN=1;    shift ;;
-    --force)   # shellcheck disable=SC2034  # used by copy_template_files (Task 5)
-               FORCE=1;      shift ;;
+    --force)   FORCE=1;      shift ;;
     --help|-h) usage; exit 0 ;;
     *) echo "unknown flag: $1" >&2; usage; exit 2 ;;
   esac
@@ -68,10 +65,20 @@ validate_target() {
     || { echo "target is not a git repo: $TARGET (run 'git init' first)" >&2; exit 1; }
 }
 
+copy_template_files() {
+  # git archive only includes tracked files and preserves the CLAUDE.md symlink.
+  # tar -k keeps existing files so a re-run does not clobber a filled-in AGENTS.md.
+  # --force (FORCE=1) drops -k to pick up upstream template updates.
+  local keep="-k"
+  [[ "$FORCE" == 1 ]] && keep=""
+  run bash -c "git -C '$SCRIPT_DIR' archive HEAD | tar -x $keep -C '$TARGET'"
+}
+
 main() {
   require_prereqs
   validate_target
-  echo "TODO: copy + init"
+  copy_template_files
+  echo "TODO: pre-commit + bd"
 }
 
 main
