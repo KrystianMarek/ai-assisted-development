@@ -82,11 +82,20 @@ copy_template_files() {
   git -C "$SCRIPT_DIR" archive HEAD | "${tar_cmd[@]}"
 }
 
+install_precommit() {
+  if [[ "$DRY_RUN" == 1 ]]; then
+    printf 'DRY: (cd %q && pre-commit install)\n' "$TARGET"
+    return 0
+  fi
+  (cd "$TARGET" && pre-commit install >/dev/null)
+}
+
 main() {
   require_prereqs
   validate_target
   copy_template_files
-  echo "TODO: pre-commit + bd"
+  install_precommit
+  echo "TODO: bd"
 }
 
 main
