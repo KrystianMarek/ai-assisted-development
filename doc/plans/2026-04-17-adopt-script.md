@@ -268,7 +268,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
 
   ```bash
   validate_target() {
-    [[ -d "$TARGET" ]] || { echo "target does not exist: $TARGET" >&2; exit 1; }
+    [[ -d "$TARGET" ]] || { echo "target is not a directory: $TARGET" >&2; exit 1; }
     git -C "$TARGET" rev-parse --git-dir >/dev/null 2>&1 \
       || { echo "target is not a git repo: $TARGET (run 'git init' first)" >&2; exit 1; }
   }
