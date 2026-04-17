@@ -417,6 +417,12 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
 
 - [ ] **Step 1: Add `wire_bd_hook`**
 
+  > Rationale for two gap fixes vs the original plan sketch:
+  >
+  > **Gap 1 (dry-run safety):** The original body read `cat "$hook"` and checked `[[ -f "$source" ]]` before the `$DRY_RUN` guard. In dry-run mode neither file exists (install_precommit and bd_init are no-ops), causing `set -euo pipefail` to abort. Fix: move the DRY_RUN check to the top of the function, before any file reads.
+  >
+  > **Gap 2 (core.hooksPath):** `bd init` sets `git config core.hooksPath .beads/hooks`, which redirects git past `.git/hooks/pre-commit`. Writing a merged hook there without unsetting `core.hooksPath` is silently useless. Fix (Choice A): after writing the merged hook, call `git -C "$TARGET" config --unset core.hooksPath` so git uses the standard hook path that `pre-commit install` expects.
+
   ```bash
   wire_bd_hook() {
     local hook="$TARGET/.git/hooks/pre-commit"
@@ -424,19 +430,17 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
       echo "BEADS block already present in $hook, skipping"
       return 0
     fi
-    # Extract the BEADS block from the one bd just wrote.
+    if [[ "$DRY_RUN" == 1 ]]; then
+      printf 'DRY: would prepend BEADS block to %s\n' "$hook"
+      return 0
+    fi
     local source="$TARGET/.beads/hooks/pre-commit"
     [[ -f "$source" ]] || { echo "expected $source after bd init, not found" >&2; return 1; }
     local beads_block
     beads_block="$(sed -n '/BEGIN BEADS INTEGRATION/,/END BEADS INTEGRATION/p' "$source")"
     [[ -n "$beads_block" ]] || { echo "could not extract BEADS block from $source" >&2; return 1; }
-    # Prepend the BEADS block (above the pre-commit framework's exec) and preserve the rest.
     local current
     current="$(cat "$hook")"
-    if [[ "$DRY_RUN" == 1 ]]; then
-      printf 'DRY: would prepend BEADS block to %s\n' "$hook"
-      return 0
-    fi
     {
       printf '#!/usr/bin/env bash\n'
       printf '%s\n\n' "$beads_block"
@@ -445,6 +449,10 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
     } > "$hook.new"
     mv "$hook.new" "$hook"
     chmod +x "$hook"
+    # Unset core.hooksPath so git uses .git/hooks/pre-commit instead of
+    # .beads/hooks/pre-commit (which bd init sets). The merged hook now lives
+    # at the standard location that pre-commit install expects.
+    git -C "$TARGET" config --unset core.hooksPath 2>/dev/null || true
   }
   ```
 

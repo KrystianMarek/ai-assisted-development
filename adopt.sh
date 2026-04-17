@@ -102,6 +102,37 @@ install_precommit() {
   return $rc
 }
 
+wire_bd_hook() {
+  local hook="$TARGET/.git/hooks/pre-commit"
+  if [[ -f "$hook" ]] && grep -q "BEGIN BEADS INTEGRATION" "$hook"; then
+    echo "BEADS block already present in $hook, skipping"
+    return 0
+  fi
+  if [[ "$DRY_RUN" == 1 ]]; then
+    printf 'DRY: would prepend BEADS block to %s\n' "$hook"
+    return 0
+  fi
+  local source="$TARGET/.beads/hooks/pre-commit"
+  [[ -f "$source" ]] || { echo "expected $source after bd init, not found" >&2; return 1; }
+  local beads_block
+  beads_block="$(sed -n '/BEGIN BEADS INTEGRATION/,/END BEADS INTEGRATION/p' "$source")"
+  [[ -n "$beads_block" ]] || { echo "could not extract BEADS block from $source" >&2; return 1; }
+  local current
+  current="$(cat "$hook")"
+  {
+    printf '#!/usr/bin/env bash\n'
+    printf '%s\n\n' "$beads_block"
+    # Strip the existing shebang (if any) from the current file.
+    printf '%s\n' "$current" | sed '1{/^#!/d}'
+  } > "$hook.new"
+  mv "$hook.new" "$hook"
+  chmod +x "$hook"
+  # Unset core.hooksPath so git uses .git/hooks/pre-commit instead of
+  # .beads/hooks/pre-commit (which bd init sets). The merged hook now lives
+  # at the standard location that pre-commit install expects.
+  git -C "$TARGET" config --unset core.hooksPath 2>/dev/null || true
+}
+
 bd_init() {
   # bd init on a template-fresh AGENTS.md may panic in updateAgentFile while
   # injecting the BEADS-INTEGRATION marker region (upstream bug). We accept
@@ -132,7 +163,8 @@ main() {
   copy_template_files
   install_precommit
   bd_init
-  echo "TODO: wire bd hook + role"
+  wire_bd_hook
+  echo "TODO: role"
 }
 
 main
