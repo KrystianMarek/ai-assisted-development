@@ -23,12 +23,41 @@ The rule *"Work is NOT complete until `git push` succeeds"* (see Session Complet
 - [ ] Create `.pre-commit-config.yaml` with at minimum:
   - `trailing-whitespace`, `end-of-file-fixer`, `check-merge-conflict`, `check-yaml`
   - a language-appropriate linter (`ruff` for Python, `golangci-lint` for Go, `eslint`/`biome` for JS/TS, etc.)
+  - **Pin revisions to the latest at adoption time.** The template ships reasonable defaults but they may be months behind — check each repo for the current tag.
 - [ ] Register the hook: `pre-commit install`
 - [ ] Verify it fires: `pre-commit run --all-files`
 
 If the user prefers another runner (`prek`, `husky`, `lefthook`), swap it in — but keep the guarantee: **no commit lands without passing lint/format checks.**
 
-### 2. Install and initialize `bd` (beads)
+> **Adopting into an existing codebase?** The first `pre-commit run --all-files` will likely find pre-existing lint violations (trailing whitespace, formatting, etc.). This is expected. Fix them in a dedicated cleanup commit, or use `git commit --no-verify` for your initial adoption commit and address lint in a follow-up.
+
+### 2. Install Dolt (database engine for bd)
+
+`bd` stores issues in a [Dolt](https://docs.dolthub.com/) database — a version-controlled SQL database with git-like merge semantics. Dolt must be installed before `bd init`.
+
+**Action:**
+
+- [ ] Check if Dolt is already installed:
+  ```bash
+  dolt version
+  ```
+- [ ] If not installed:
+
+  **Linux:**
+  ```bash
+  sudo bash -c 'curl -L https://github.com/dolthub/dolt/releases/latest/download/install.sh | sudo bash'
+  ```
+
+  **macOS:**
+  ```bash
+  brew install dolt
+  ```
+
+  Reference: <https://docs.dolthub.com/introduction/installation>
+
+- [ ] Verify: `dolt version` should print the installed version.
+
+### 3. Install and initialize `bd` (beads)
 
 Issue tracking in this template is done with [`bd`](https://github.com/steveyegge/beads). It must be on `PATH` before any issues are created.
 
@@ -43,29 +72,74 @@ Issue tracking in this template is done with [`bd`](https://github.com/steveyegg
   curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash
   ```
   Reference: <https://github.com/steveyegge/beads>
-- [ ] Initialize the project database:
+- [ ] **Initialize the database** — choose the right command for your situation:
+
+  **New project (no existing Dolt data in the git remote):**
   ```bash
   bd init
   ```
-  This scaffolds `.beads/` (local only — `.beads/` is git-ignored by the template) and injects a BEADS-INTEGRATION comment block into this file (the canonical `AGENTS.md`; `CLAUDE.md` symlinks to it). If `bd init` detects existing bd content it will preserve it rather than overwriting.
-- [ ] **Configure the Dolt sync remote.** `bd init` auto-detects a git remote if one is already configured on the repo and wires it as the Dolt `origin` remote (this is what makes `bd dolt push` work). Verify or fix:
+  This scaffolds `.beads/` (local only — `.beads/` is git-ignored by the template) and injects a BEADS-INTEGRATION comment block into this file.
+
+  **Existing project (cloned from a repo that already has Dolt refs):**
+  ```bash
+  bd bootstrap
+  ```
+  This clones the existing Dolt database from the git remote. Use `bd bootstrap --dry-run` first to confirm the plan. After bootstrap, **restart the Dolt server** — it won't pick up the new database automatically:
+  ```bash
+  bd dolt stop && bd dolt start
+  ```
+
+- [ ] **Configure the Dolt sync remote** (skip if `bd bootstrap` already set this up). `bd init` auto-detects a git remote if one is already configured on the repo and wires it as the Dolt `origin` remote (this is what makes `bd dolt push` work). Verify or fix:
   ```bash
   bd dolt remote list                                  # should show 'origin' with your repo URL
   # If empty or wrong, add/replace it:
   bd dolt remote add origin <your-git-url-here>        # e.g. git+ssh://git@github.com/<you>/<repo>.git
   ```
-  Do NOT commit `.beads/config.yaml` — it contains your per-project `sync.remote` URL and would leak if the template repo were reused.
-- [ ] (Recommended) Install bd git hooks so `bd prime` context auto-injects at session start:
+- [ ] Verify the push works:
+  ```bash
+  bd dolt push
+  ```
+  This catches auth or remote-URL issues early. If it fails, fix the remote config now.
+
+### 4. Install bd hooks and fix ordering
+
+- [ ] Install bd git hooks:
   ```bash
   bd hooks install
   ```
-- [ ] **Fix hook ordering** in `.beads/hooks/pre-commit`. If `pre-commit install` ran first (step 1), `bd init` preserved the pre-commit framework body in `.beads/hooks/pre-commit` and appended its own integration block — but the framework body ends in `exec`, so the bd block is unreachable. Move the `# --- BEGIN BEADS INTEGRATION --- ... # --- END BEADS INTEGRATION ---` block to sit **above** the `# start templated` line so bd runs first, then `exec`s into the pre-commit framework. Without this fix, `bd hooks run pre-commit` (which exports `.beads/issues.jsonl` for git-tracking) never fires on commit.
-- [ ] Confirm: `bd status` should report the fresh database.
+- [ ] **Fix hook ordering.** Both `pre-commit install` (step 1) and `bd hooks install` write to `.git/hooks/pre-commit`. The result is the bd integration block sitting **after** the pre-commit framework's `exec` — making it unreachable. You must move the bd block above the `exec`.
 
-### 3. Set project identity
+  Open `.git/hooks/pre-commit` and move the entire `# --- BEGIN BEADS INTEGRATION --- ... # --- END BEADS INTEGRATION ---` block to sit **above** the `# start templated` line. The file should look like:
+  ```bash
+  #!/usr/bin/env bash
+  # --- BEGIN BEADS INTEGRATION ---
+  # ... (bd hook block)
+  # --- END BEADS INTEGRATION ---
+
+  # File generated by pre-commit: https://pre-commit.com
+  # start templated
+  # ... (pre-commit framework, ending in exec)
+  ```
+  Without this fix, `bd hooks run pre-commit` (which exports `.beads/issues.jsonl`) never fires on commit.
+
+### 5. Run bd doctor
+
+- [ ] Run the doctor and auto-fix detected issues:
+  ```bash
+  bd doctor --fix --yes
+  ```
+  This catches gitignore gaps, tracked runtime files, database version mismatches, and other issues the manual steps might miss.
+- [ ] Set your role (required for routing):
+  ```bash
+  git config beads.role maintainer
+  ```
+- [ ] Confirm: `bd status` should report the database with zero errors.
+
+### 6. Set project identity
 
 - [ ] Replace the **Project Overview** placeholder below with the real project name, purpose, primary language, and package manager.
 - [ ] Populate the **Development Conventions** section with the stack's rules (test runner, linter, branch strategy, etc.).
+- [ ] If adopting into an existing repo with a substantial `CLAUDE.md`, merge its project-specific content into the appropriate sections of this file before replacing `CLAUDE.md` with the symlink.
 - [ ] **Delete this entire "Project Initialization Checklist" section.** Its job is done.
 
 ---
@@ -218,6 +292,8 @@ Why: semantic IDs give agents and humans instant context without a `bd show`, an
 - `bd edit <id>` edits the description in `$EDITOR` by default; use `--title`, `--design`, `--notes`, `--acceptance` to edit other fields.
 - `bd ready` shows a tree by default (`--pretty` is the default); pass `--plain` for a numbered list.
 - `bd dolt push` takes **no positional args** — the remote is configured once via `bd dolt remote add`.
+- **`bd prime` requires the Dolt server running.** The `.claude/settings.json` hooks fire `bd prime` on SessionStart and PreCompact. If the Dolt server isn't up, the hook will error. Start it with `bd dolt start` if you see "Dolt server unreachable" errors at session start.
+- **After `bd bootstrap`, restart the Dolt server.** The server doesn't detect newly cloned databases — run `bd dolt stop && bd dolt start` after bootstrap.
 - **Never close a ticket with incomplete work** unless the deferred items are captured in NEW tickets with full context (what was learned, what remains, why deferred, acceptance criteria). Vague "deferred" comments with no follow-up ticket are how work gets lost.
 - If the Dolt server is stuck: `bd dolt set port <new_port>` then `bd dolt start`. Check with `lsof -i :<port>`.
 
