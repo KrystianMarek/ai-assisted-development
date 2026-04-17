@@ -5,7 +5,6 @@ set -euo pipefail
 
 # shellcheck disable=SC2034  # used by copy_template_files (Task 5)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck disable=SC2034  # used by validate_target (Task 4)
 TARGET="${PWD}"
 # shellcheck disable=SC2034  # used by set_role (Task 9)
 ROLE="maintainer"
@@ -28,7 +27,6 @@ EOF
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --target)  [[ $# -ge 2 ]] || { echo "--target requires DIR" >&2; exit 2; }
-               # shellcheck disable=SC2034  # used by validate_target (Task 4)
                TARGET="$2"; shift 2 ;;
     --role)    [[ $# -ge 2 ]] || { echo "--role requires ROLE" >&2; exit 2; }
                # shellcheck disable=SC2034  # used by set_role (Task 9)
@@ -64,9 +62,16 @@ require_prereqs() {
   fi
 }
 
+validate_target() {
+  [[ -d "$TARGET" ]] || { echo "target does not exist: $TARGET" >&2; exit 1; }
+  git -C "$TARGET" rev-parse --git-dir >/dev/null 2>&1 \
+    || { echo "target is not a git repo: $TARGET (run 'git init' first)" >&2; exit 1; }
+}
+
 main() {
   require_prereqs
-  echo "TODO: remaining steps"
+  validate_target
+  echo "TODO: copy + init"
 }
 
 main
