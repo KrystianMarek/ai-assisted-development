@@ -1,8 +1,8 @@
 # Plan: `adopt.sh` — Automate Template Adoption
 
-**Status:** Planning
+**Status:** Parked
 **Owner:** @krystian (with Claude Code)
-**Branch:** `feat/adopt-script` (to be created)
+**Branch:** `feat/adopt-script` (active, unpushed)
 
 > **For agentic workers:** Steps use checkbox (`- [ ]`) syntax for tracking. Pair with `superpowers:executing-plans` when executing in one session, or `superpowers:subagent-driven-development` for fresh subagent per task.
 
@@ -74,14 +74,14 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
 
 **Files:** n/a (git state)
 
-- [ ] **Step 1: Create a feature branch from `main`**
+- [x] **Step 1: Create a feature branch from `main`**
 
   ```bash
   cd /home/krystian/Development/ai-assisted-development
   git checkout -b feat/adopt-script
   ```
 
-- [ ] **Step 2: File the epic in bd and claim it**
+- [x] **Step 2: File the epic in bd and claim it**
 
   ```bash
   bd create "Automate template adoption with adopt.sh" \
@@ -91,7 +91,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
   bd dolt push
   ```
 
-- [ ] **Step 3: Add a row for this plan in `doc/plans/README.md`**
+- [x] **Step 3: Add a row for this plan in `doc/plans/README.md`**
 
   Replace the `_none yet_` placeholder row with:
 
@@ -99,7 +99,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
   | [adopt.sh](2026-04-17-adopt-script.md) | Automate template adoption | Approved | 2026-04-17 |
   ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
   ```bash
   git add doc/plans/2026-04-17-adopt-script.md doc/plans/README.md
@@ -112,7 +112,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
 
 **Files:** Create `adopt.sh`
 
-- [ ] **Step 1: Write the minimal skeleton**
+- [x] **Step 1: Write the minimal skeleton**
 
   ```bash
   #!/usr/bin/env bash
@@ -164,7 +164,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
   main
   ```
 
-- [ ] **Step 2: Make it executable and sanity-check**
+- [x] **Step 2: Make it executable and sanity-check**
 
   ```bash
   chmod +x adopt.sh
@@ -173,7 +173,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
   ./adopt.sh --dry-run         # should print "TODO: adoption steps"
   ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
   ```bash
   git add adopt.sh
@@ -186,7 +186,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
 
 **Files:** Modify `.pre-commit-config.yaml`
 
-- [ ] **Step 1: Add the hook**
+- [x] **Step 1: Add the hook**
 
   Append to `.pre-commit-config.yaml` (after the `markdownlint-cli` block):
 
@@ -197,7 +197,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
         - id: shellcheck
   ```
 
-- [ ] **Step 2: Run it and verify it passes**
+- [x] **Step 2: Run it and verify it passes**
 
   ```bash
   pre-commit run shellcheck --all-files
@@ -205,7 +205,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
 
   Expected: pass (the scaffold is shellcheck-clean).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
   ```bash
   git add .pre-commit-config.yaml
@@ -218,7 +218,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
 
 **Files:** Modify `adopt.sh`
 
-- [ ] **Step 1: Add `require_prereqs` above `main`**
+- [x] **Step 1: Add `require_prereqs` above `main`**
 
   ```bash
   require_prereqs() {
@@ -235,7 +235,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
   }
   ```
 
-- [ ] **Step 2: Call it from `main`**
+- [x] **Step 2: Call it from `main`**
 
   ```bash
   main() {
@@ -244,14 +244,14 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
   }
   ```
 
-- [ ] **Step 3: Verify by hand**
+- [x] **Step 3: Verify by hand**
 
   ```bash
   ./adopt.sh --dry-run    # should print "TODO: remaining steps" (all prereqs present locally)
   PATH= ./adopt.sh --dry-run 2>&1 || true   # should list missing tools and exit 1
   ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
   ```bash
   git add adopt.sh
@@ -264,7 +264,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
 
 **Files:** Modify `adopt.sh`
 
-- [ ] **Step 1: Add `validate_target`**
+- [x] **Step 1: Add `validate_target`**
 
   ```bash
   validate_target() {
@@ -276,7 +276,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
 
   Note: we intentionally do **not** abort on an existing `AGENTS.md`. `copy_template_files` (Task 5) uses `tar -k` so existing files are preserved on a re-run; `--force` switches to overwrite mode for intentional resync with upstream template changes.
 
-- [ ] **Step 2: Call it**
+- [x] **Step 2: Call it**
 
   ```bash
   main() {
@@ -286,7 +286,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
   }
   ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
   ```bash
   git add adopt.sh
@@ -299,7 +299,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
 
 **Files:** Modify `adopt.sh`
 
-- [ ] **Step 1: Add `copy_template_files`**
+- [x] **Step 1: Add `copy_template_files`**
 
   ```bash
   copy_template_files() {
@@ -323,7 +323,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
 
   > Rationale for not using `run bash -c "..."`: embedding `$TARGET` into a single-quoted bash-c string is injection-vulnerable for paths containing a literal `'` and forces the `run` wrapper to `%q`-escape the whole pipeline in dry-run output, which is unreadable. Direct pipeline execution with quoted variables is safer and clearer. Apply the same pattern in Tasks 6 and 8.
 
-- [ ] **Step 2: Call it, commit**
+- [x] **Step 2: Call it, commit**
 
   ```bash
   main() {
@@ -345,7 +345,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
 
 **Files:** Modify `adopt.sh`
 
-- [ ] **Step 1: Add `install_precommit`**
+- [x] **Step 1: Add `install_precommit`**
 
   ```bash
   install_precommit() {
@@ -361,7 +361,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
 
   > Uses a subshell `(cd … && …)` rather than `run bash -c "cd '$TARGET' && …"` — same rationale as Task 5: avoids shell injection through `$TARGET` and keeps dry-run output readable.
 
-- [ ] **Step 2: Call + commit**
+- [x] **Step 2: Call + commit**
 
   ```bash
   git add adopt.sh
@@ -374,7 +374,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
 
 **Files:** Modify `adopt.sh`
 
-- [ ] **Step 1: Add `bd_init` that tolerates the known `updateAgentFile` panic**
+- [x] **Step 1: Add `bd_init` that tolerates the known `updateAgentFile` panic**
 
   ```bash
   bd_init() {
@@ -402,7 +402,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
   }
   ```
 
-- [ ] **Step 2: Call + commit**
+- [x] **Step 2: Call + commit**
 
   ```bash
   git add adopt.sh
@@ -415,7 +415,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
 
 **Files:** Modify `adopt.sh`
 
-- [ ] **Step 1: Add `wire_bd_hook`**
+- [x] **Step 1: Add `wire_bd_hook`**
 
   > Rationale for two gap fixes vs the original plan sketch:
   >
@@ -456,7 +456,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
   }
   ```
 
-- [ ] **Step 2: Call + commit**
+- [x] **Step 2: Call + commit**
 
   ```bash
   git add adopt.sh
@@ -469,7 +469,7 @@ A `run()` wrapper routes all mutating commands through a single chokepoint that 
 
 **Files:** Modify `adopt.sh`
 
-- [ ] **Step 1: Add `set_role` and `report_next_steps`**
+- [x] **Step 1: Add `set_role` and `report_next_steps`**
 
   ```bash
   set_role() {
@@ -506,14 +506,14 @@ EOF
   }
   ```
 
-- [ ] **Step 2: End-to-end dry-run**
+- [x] **Step 2: End-to-end dry-run**
 
   ```bash
   ./adopt.sh --target /tmp/does-not-exist --dry-run || true
   ./adopt.sh --dry-run    # from the template root — should print DRY: lines for each step
   ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
   ```bash
   git add adopt.sh
@@ -526,7 +526,7 @@ EOF
 
 **Files:** Create `test/smoke-adopt.sh`
 
-- [ ] **Step 1: Write the smoke test**
+- [x] **Step 1: Write the smoke test**
 
   ```bash
   #!/usr/bin/env bash
@@ -566,7 +566,7 @@ EOF
   if (( fail )); then echo "smoke test FAILED"; exit 1; else echo "smoke test passed"; fi
   ```
 
-- [ ] **Step 2: Make executable, run once, fix anything that fails**
+- [x] **Step 2: Make executable, run once, fix anything that fails**
 
   ```bash
   chmod +x test/smoke-adopt.sh
@@ -575,7 +575,7 @@ EOF
 
   Expected: all `OK`, exit 0. Fix any `FAIL` before proceeding.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
   ```bash
   git add test/smoke-adopt.sh
@@ -588,7 +588,7 @@ EOF
 
 **Files:** Modify `AGENTS.md`, `README.md`. Create `doc/development/adopting-with-script.md`.
 
-- [ ] **Step 1: Patch the top of the Project Initialization Checklist in `AGENTS.md`**
+- [x] **Step 1: Patch the top of the Project Initialization Checklist in `AGENTS.md`**
 
   Immediately under the `## ⏱️ Project Initialization Checklist — REMOVE THIS SECTION AFTER COMPLETION` heading, add:
 
@@ -596,7 +596,7 @@ EOF
   > **Shortcut:** from a checkout of this template, run `./adopt.sh --target /path/to/your/repo` to automate steps 1–5 below. Steps 6 (Project Overview, Dev Conventions, delete this checklist) are still manual. The manual walkthrough remains authoritative if anything in `adopt.sh` fails.
   ```
 
-- [ ] **Step 2: Patch the `README.md` bootstrap section**
+- [x] **Step 2: Patch the `README.md` bootstrap section**
 
   In the "Bootstrapping a new project from this template" list, insert a leading item:
 
@@ -610,17 +610,17 @@ EOF
   `adopt.sh` handles the file copy, pre-commit install, `bd init`, and hook wiring — run it with `--dry-run` first to see exactly what it would do. It will refuse to overwrite an existing `AGENTS.md` without `--force`.
   ```
 
-- [ ] **Step 3: Write `doc/development/adopting-with-script.md`**
+- [x] **Step 3: Write `doc/development/adopting-with-script.md`**
 
   Short note (under 50 lines) covering: what `adopt.sh` does vs skips, when to use it, when to fall back to the manual checklist, how to extend it when the template grows.
 
-- [ ] **Step 4: Run pre-commit on all files**
+- [x] **Step 4: Run pre-commit on all files**
 
   ```bash
   pre-commit run --all-files
   ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
   ```bash
   git add AGENTS.md README.md doc/development/adopting-with-script.md
@@ -629,7 +629,9 @@ EOF
 
 ---
 
-### Task 12: Land the plane
+### Task 12: Land the plane — PARKED
+
+> **Parked 2026-04-18:** implementation complete through Task 11 and the synthetic smoke test passes (all 9 checks, commit `5bb58e3`). Landing is deferred until the script can be exercised against a real new-project adoption. Resume this task once that target repo exists; at that point re-run the smoke test, run `adopt.sh --dry-run` against the real target, then run it for real, and only after observing a clean adoption proceed with push + PR + bd handoff. The steps below remain the authoritative procedure.
 
 **Files:** n/a
 
