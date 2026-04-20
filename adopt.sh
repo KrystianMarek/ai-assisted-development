@@ -202,6 +202,31 @@ bd_init() {
   fi
 }
 
+ensure_beads_markers() {
+  # Safety net for the upstream 'bd init' updateAgentFile panic: if bd did
+  # not inject its HTML-comment markers into AGENTS.md, reserve the region
+  # ourselves so agents honour the "don't edit inside" contract. A future
+  # successful 'bd init' (or upstream fix) will find the markers and fill
+  # the region in; until then, the block is intentionally near-empty.
+  local agents="$TARGET/AGENTS.md"
+  [[ -f "$agents" ]] || return 0
+  if grep -q 'BEADS-INTEGRATION:BEGIN' "$agents" 2>/dev/null; then
+    return 0
+  fi
+  if [[ "$DRY_RUN" == 1 ]]; then
+    printf 'DRY: append BEADS-INTEGRATION marker block to %q\n' "$agents"
+    return 0
+  fi
+  cat >> "$agents" <<'EOF'
+
+<!-- BEADS-INTEGRATION:BEGIN -->
+<!-- Managed by bd (beads). Do not hand-edit between these markers. -->
+<!-- Region reserved by adopt.sh because 'bd init' updateAgentFile panicked; -->
+<!-- a subsequent successful 'bd init' will populate this block. -->
+<!-- BEADS-INTEGRATION:END -->
+EOF
+}
+
 main() {
   require_prereqs
   validate_target
@@ -209,6 +234,7 @@ main() {
   copy_template_files
   install_precommit
   bd_init
+  ensure_beads_markers
   wire_bd_hook
   set_role
   report_next_steps
