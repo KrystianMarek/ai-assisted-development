@@ -124,6 +124,27 @@ copy_template_files() {
   git -C "$SCRIPT_DIR" archive HEAD | "${tar_cmd[@]}"
 }
 
+write_placeholder_readme() {
+  local readme="$TARGET/README.md"
+  if [[ -f "$readme" ]]; then
+    echo "README.md already exists in $TARGET, leaving it alone"
+    return 0
+  fi
+  if [[ "$DRY_RUN" == 1 ]]; then
+    printf 'DRY: write placeholder README.md to %q\n' "$readme"
+    return 0
+  fi
+  cat > "$readme" <<'EOF'
+# <project name>
+
+TODO: one-paragraph description of this project.
+
+This repository was bootstrapped from
+[`ai-assisted-development`](https://github.com/krystianmarek/ai-assisted-development).
+See [`AGENTS.md`](./AGENTS.md) for agent workflow and conventions.
+EOF
+}
+
 install_precommit() {
   if [[ "$DRY_RUN" == 1 ]]; then
     printf 'DRY: (cd %q && pre-commit install)\n' "$TARGET"
@@ -186,8 +207,8 @@ Adoption complete. Manual follow-ups:
   1. Edit $TARGET/AGENTS.md — replace the Project Overview placeholder and
      populate Development Conventions. Delete the Project Initialization
      Checklist section when you are done.
-  2. Replace $TARGET/README.md with a README describing the new project
-     (the template's README is about the template itself).
+  2. Edit $TARGET/README.md — replace the TODO placeholder with a real
+     project description (or, if you kept a pre-existing README, leave it).
   3. Commit, then:
        git -C $TARGET push -u origin main
        (cd $TARGET && bd dolt push)
@@ -254,6 +275,7 @@ main() {
   validate_target
   check_git_writable
   copy_template_files
+  write_placeholder_readme
   install_precommit
   bd_init
   ensure_beads_markers
