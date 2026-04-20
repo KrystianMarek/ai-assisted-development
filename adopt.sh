@@ -63,6 +63,32 @@ validate_target() {
     || { echo "target is not a git repo: $TARGET (run 'git init' first)" >&2; exit 1; }
 }
 
+check_git_writable() {
+  local hooks_dir="$TARGET/.git/hooks"
+  local config_file="$TARGET/.git/config"
+  local probe
+  if ! probe="$(mktemp "$hooks_dir/.adopt-write-test-XXXXXX" 2>/dev/null)"; then
+    cat >&2 <<EOF
+adopt.sh: $hooks_dir is not writable.
+
+This commonly happens inside sandboxed agent harnesses (Claude Code, Codex,
+Gemini) that mount .git/ read-only. Re-run this script outside the sandbox,
+or grant the sandbox write access to .git/ in your host configuration.
+EOF
+    return 1
+  fi
+  rm -f "$probe"
+  if [[ ! -w "$config_file" ]]; then
+    cat >&2 <<EOF
+adopt.sh: $config_file is not writable.
+
+Same cause as the hooks case above — re-run outside the sandbox or fix
+sandbox permissions so 'git config' can write to .git/config.
+EOF
+    return 1
+  fi
+}
+
 copy_template_files() {
   # git archive only includes tracked files and preserves the CLAUDE.md symlink.
   # --skip-old-files silently skips existing files and exits 0, so re-runs do not
@@ -179,6 +205,7 @@ bd_init() {
 main() {
   require_prereqs
   validate_target
+  check_git_writable
   copy_template_files
   install_precommit
   bd_init
