@@ -122,7 +122,7 @@ install_precommit() {
     echo "pre-commit hook already merged with BEADS in $TARGET, skipping pre-commit install"
     return 0
   fi
-  (cd "$TARGET" && pre-commit install >/dev/null)
+  (cd "$TARGET" && pre-commit install)
 }
 
 wire_bd_hook() {
