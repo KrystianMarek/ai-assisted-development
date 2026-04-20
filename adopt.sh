@@ -210,14 +210,17 @@ ensure_beads_markers() {
   # the region in; until then, the block is intentionally near-empty.
   local agents="$TARGET/AGENTS.md"
   [[ -f "$agents" ]] || return 0
-  if grep -q 'BEADS-INTEGRATION:BEGIN' "$agents" 2>/dev/null; then
+  if grep -q 'BEADS-INTEGRATION:BEGIN' "$agents"; then
     return 0
   fi
   if [[ "$DRY_RUN" == 1 ]]; then
     printf 'DRY: append BEADS-INTEGRATION marker block to %q\n' "$agents"
     return 0
   fi
-  cat >> "$agents" <<'EOF'
+  local tmp
+  tmp="$(mktemp "$agents.adopt.XXXXXX")"
+  cat "$agents" > "$tmp"
+  cat >> "$tmp" <<'EOF'
 
 <!-- BEADS-INTEGRATION:BEGIN -->
 <!-- Managed by bd (beads). Do not hand-edit between these markers. -->
@@ -225,6 +228,7 @@ ensure_beads_markers() {
 <!-- a subsequent successful 'bd init' will populate this block. -->
 <!-- BEADS-INTEGRATION:END -->
 EOF
+  mv -f "$tmp" "$agents"
 }
 
 main() {
