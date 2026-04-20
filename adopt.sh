@@ -90,12 +90,30 @@ EOF
 }
 
 copy_template_files() {
-  # git archive only includes tracked files and preserves the CLAUDE.md symlink.
-  # --skip-old-files silently skips existing files and exits 0, so re-runs do not
-  # clobber a filled-in AGENTS.md and do not trip `set -euo pipefail`.
+  # git archive HEAD emits only tracked files and preserves the CLAUDE.md
+  # symlink. We pipe through tar -x so we can apply --exclude filters for
+  # template-about-template artefacts that adopted projects should not
+  # receive (see TEMPLATE_EXCLUDES below).
+  #
+  # --skip-old-files silently skips existing files and exits 0, so re-runs
+  # do not clobber a filled-in AGENTS.md and do not trip set -euo pipefail.
   # --force (FORCE=1) drops the flag to resync with upstream template changes.
+  #
+  # --anchored makes --exclude match only against the leading path component,
+  # so --exclude=README.md drops the root README.md without also dropping
+  # doc/*/README.md index files that adopted projects need.
+  local -a TEMPLATE_EXCLUDES=(
+    --anchored
+    --exclude=README.md
+    --exclude=adopt.sh
+    --exclude=doc/development/adopting-with-script.md
+    --exclude=doc/plans/2026-04-17-adopt-script.md
+    --exclude=test
+    --exclude='test/*'
+  )
   local -a tar_cmd=(tar -x)
   [[ "$FORCE" == 1 ]] || tar_cmd+=(--skip-old-files)
+  tar_cmd+=("${TEMPLATE_EXCLUDES[@]}")
   tar_cmd+=(-C "$TARGET")
   if [[ "$DRY_RUN" == 1 ]]; then
     printf 'DRY: git -C %q archive HEAD |' "$SCRIPT_DIR"
