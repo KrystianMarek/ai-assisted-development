@@ -6,8 +6,15 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+WORKDIR='' WORKDIR2='' WORKDIR3=''
+cleanup() {
+  [[ -n "$WORKDIR3" && -d "$WORKDIR3/.git/hooks" ]] && chmod 755 "$WORKDIR3/.git/hooks" 2>/dev/null || true
+  rm -rf "${WORKDIR:-}" "${WORKDIR2:-}" "${WORKDIR3:-}"
+}
+trap cleanup EXIT
+
 WORKDIR="$(mktemp -d)"
-trap 'rm -rf "$WORKDIR"' EXIT
 
 git -C "$WORKDIR" init -q
 git -C "$WORKDIR" remote add origin "ssh://git@example.invalid/smoke.git"
@@ -23,7 +30,11 @@ check "doc/plans/README.md copied"          "[[ -f '$WORKDIR/doc/plans/README.md
 check ".beads/config.yaml present"          "[[ -f '$WORKDIR/.beads/config.yaml' ]]"
 check "pre-commit hook exists"              "[[ -x '$WORKDIR/.git/hooks/pre-commit' ]]"
 check "BEADS block present in hook"         "grep -q 'BEGIN BEADS INTEGRATION' '$WORKDIR/.git/hooks/pre-commit'"
-check "BEADS block is ABOVE pre-commit exec" "awk '/BEGIN BEADS INTEGRATION/{b=NR} /^if \\[ -x \"\\\$INSTALL_PYTHON\" \\]/{if(b && NR>b) exit 0; exit 1}' '$WORKDIR/.git/hooks/pre-commit'"
+check "BEADS block is ABOVE pre-commit exec" "awk '
+  /BEGIN BEADS INTEGRATION/ { beads=NR }
+  /END BEADS INTEGRATION/   { beads_end=NR }
+  /^if \[/ { if (beads_end && beads_end < NR) { print \"ok\"; exit 0 } exit 1 }
+' '$WORKDIR/.git/hooks/pre-commit' | grep -q ok"
 check "beads.role configured"               "[[ \"\$(git -C '$WORKDIR' config beads.role)\" == 'maintainer' ]]"
 check "adopt.sh NOT copied to target"        "[[ ! -e '$WORKDIR/adopt.sh' ]]"
 check "adopting-with-script.md NOT copied"   "[[ ! -e '$WORKDIR/doc/development/adopting-with-script.md' ]]"
@@ -41,17 +52,16 @@ check "re-run preserves user edits to AGENTS.md" "grep -q 'SMOKE-SENTINEL' '$WOR
 
 # Scenario 2: target already has a README — adopt.sh must leave it alone.
 WORKDIR2="$(mktemp -d)"
-trap 'rm -rf "$WORKDIR" "$WORKDIR2"' EXIT
 git -C "$WORKDIR2" init -q
 git -C "$WORKDIR2" remote add origin "ssh://git@example.invalid/smoke2.git"
 printf '# real project\n\nkeep me\n' > "$WORKDIR2/README.md"
 "$TEMPLATE/adopt.sh" --target "$WORKDIR2" --role maintainer >/dev/null
 check "pre-existing README.md preserved" "grep -q 'keep me' '$WORKDIR2/README.md'"
+check "no placeholder appended to pre-existing README" "! grep -q 'TODO: one-paragraph description' '$WORKDIR2/README.md'"
 
 # Scenario 3: .git/hooks/ is read-only — adopt.sh must exit non-zero with
 # an actionable error message mentioning the sandbox cause.
 WORKDIR3="$(mktemp -d)"
-trap 'chmod 755 "$WORKDIR3/.git/hooks" 2>/dev/null; rm -rf "$WORKDIR" "$WORKDIR2" "$WORKDIR3"' EXIT
 git -C "$WORKDIR3" init -q
 chmod 555 "$WORKDIR3/.git/hooks"
 set +e
