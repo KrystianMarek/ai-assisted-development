@@ -21,7 +21,7 @@ Example: `2026-04-17-platform-team-auth-integration.md`
 
 | Document | Source | Status | Date | Outcome |
 |----------|--------|--------|------|---------|
-| [adopt.sh feedback](2026-04-20-blog-project-adopt-sh-feedback.md) | Claude Code agent (blog project bootstrap) | Untriaged | 2026-04-20 | — |
+| [adopt.sh feedback](2026-04-20-blog-project-adopt-sh-feedback.md) | Claude Code agent (blog project bootstrap) | Triaged | 2026-04-20 | Plan filed: [`doc/plans/2026-04-20-adopt-sh-feedback.md`](../plans/2026-04-20-adopt-sh-feedback.md) |
 
 ## Document Template
 

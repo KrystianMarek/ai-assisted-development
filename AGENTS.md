@@ -141,6 +141,7 @@ Issue tracking in this template is done with [`bd`](https://github.com/gastownha
 
 - [ ] Replace the **Project Overview** placeholder below with the real project name, purpose, primary language, and package manager.
 - [ ] Populate the **Development Conventions** section with the stack's rules (test runner, linter, branch strategy, etc.).
+- [ ] Replace the placeholder `README.md` (written by `adopt.sh` when no README existed) with a real project description — or leave your pre-existing README as-is.
 - [ ] If adopting into an existing repo with a substantial `CLAUDE.md`, merge its project-specific content into the appropriate sections of this file before replacing `CLAUDE.md` with the symlink.
 - [ ] **Delete this entire "Project Initialization Checklist" section.** Its job is done.
 
