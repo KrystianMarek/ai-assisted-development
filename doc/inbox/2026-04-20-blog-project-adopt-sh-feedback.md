@@ -8,6 +8,17 @@ Agent (Claude Code, Opus 4.7) bootstrapping a new project (`~/Development/blog`)
 
 Medium — `adopt.sh` **worked** and produced a correct final state. The items below are friction points and a few latent bugs that would have become release-blockers under slightly different conditions.
 
+## Status
+
+**Resolved on 2026-04-21** on branch `feat/adopt-script`. All four acceptance criteria met; all five requirements addressed, with two shipped in a different shape than originally proposed (see annotations in Requirements). Plan: [`doc/plans/2026-04-20-adopt-sh-feedback.md`](../plans/2026-04-20-adopt-sh-feedback.md). Key commits:
+
+- P1 (writability preflight + unsuppressed `pre-commit install`): `e2a84e3`, `f27960b`
+- P2 (`ensure_beads_markers` atomic marker injection): `2c2eaaa`, `381344d`
+- P3 (`TEMPLATE_EXCLUDES` hard-coded default with `--anchored`): `c913efc`
+- P4 (`write_placeholder_readme` inline heredoc): `8c7dc1e`, `202c0e1`
+- Smoke test covering all four: `6c114e6`, `9b52fe6`
+- Docs (adopting-with-script, AGENTS.md step 6, inbox triage): `aeb7b2f`
+
 ## Summary
 
 `adopt.sh` completed the adoption cleanly in one run (after the sandbox was disabled). The Dolt remote, pre-commit hook ordering, BEADS integration block, `beads.role`, and file copy all landed correctly. During the run I observed:
@@ -105,18 +116,18 @@ See [`AGENTS.md`](./AGENTS.md) for agent workflow and conventions.
 
 ## Requirements
 
-- [ ] `adopt.sh` detects read-only `.git/hooks/` and `.git/config` before invoking commands that write to them, and prints an actionable error.
-- [ ] Remove unconditional `>/dev/null` suppression on `pre-commit install` so failures are visible.
-- [ ] When `bd init` panics but leaves critical files, `adopt.sh` injects the canonical `BEADS-INTEGRATION` marker block into `AGENTS.md` (or documents the upstream fix when one lands).
-- [ ] `adopt.sh` grows a `--exclude-template-docs` flag that omits template-about-template files.
-- [ ] The template ships a separate minimal placeholder README that `adopt.sh` uses instead of the self-describing one when the target has no `README.md`.
+- [x] `adopt.sh` detects read-only `.git/hooks/` and `.git/config` before invoking commands that write to them, and prints an actionable error. — `check_git_writable()` in `adopt.sh`.
+- [x] Remove unconditional `>/dev/null` suppression on `pre-commit install` so failures are visible.
+- [x] When `bd init` panics but leaves critical files, `adopt.sh` injects the canonical `BEADS-INTEGRATION` marker block into `AGENTS.md` (or documents the upstream fix when one lands). — `ensure_beads_markers()` runs after `bd_init` in `main()`; upstream fix still pending (deliberate: safety net removes the blocker).
+- [x] ~~`adopt.sh` grows a `--exclude-template-docs` flag that omits template-about-template files.~~ **Shipped as hard-coded default per project-owner direction** — `TEMPLATE_EXCLUDES` in `copy_template_files()` (with `--anchored` so `doc/*/README.md` index files survive). No flag needed; exclusions always apply.
+- [x] ~~The template ships a separate minimal placeholder README that `adopt.sh` uses instead of the self-describing one when the target has no `README.md`.~~ **Shipped as an inline heredoc in `write_placeholder_readme()`** rather than a separate template file. Same end state; one fewer file to maintain.
 
 ## Acceptance Criteria
 
-- [ ] Running `adopt.sh` in a sandbox that read-only-mounts `.git/hooks/` produces a clear error message identifying the root cause and suggesting a fix, instead of exiting 3 silently.
-- [ ] After a successful adoption, `AGENTS.md` in the new project contains the `BEADS-INTEGRATION` marker block, regardless of whether `bd init` panicked.
-- [ ] `adopt.sh --exclude-template-docs` leaves the new project with no template-about-template documents.
-- [ ] After a successful adoption with no `--force` and no pre-existing `README.md`, the target's `README.md` is a placeholder with a TODO and a link to `AGENTS.md`, not a description of `ai-assisted-development` itself.
+- [x] Running `adopt.sh` in a sandbox that read-only-mounts `.git/hooks/` produces a clear error message identifying the root cause and suggesting a fix, instead of exiting 3 silently. — Verified by `test/smoke-adopt.sh` Scenario 3.
+- [x] After a successful adoption, `AGENTS.md` in the new project contains the `BEADS-INTEGRATION` marker block, regardless of whether `bd init` panicked. — Verified by smoke-test assertion `BEADS-INTEGRATION markers in AGENTS.md`.
+- [x] ~~`adopt.sh --exclude-template-docs`~~ leaves the new project with no template-about-template documents. **No flag needed** — default behaviour. Verified by smoke-test assertions covering `adopt.sh`, `adopting-with-script.md`, `adopt-script` plan, and `test/` dir absence.
+- [x] After a successful adoption with no `--force` and no pre-existing `README.md`, the target's `README.md` is a placeholder with a TODO and a link to `AGENTS.md`, not a description of `ai-assisted-development` itself. — Verified by `placeholder README written` + `template README NOT leaked` smoke assertions.
 
 ## Dependencies
 
