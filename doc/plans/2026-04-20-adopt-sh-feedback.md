@@ -189,6 +189,10 @@ copy_template_files() {
   # do not clobber a filled-in AGENTS.md and do not trip set -euo pipefail.
   # --force (FORCE=1) drops the flag to resync with upstream template changes.
   local -a TEMPLATE_EXCLUDES=(
+    # --anchored makes --exclude match the leading path component only, so
+    # --exclude=README.md drops root README.md without wiping the nine
+    # doc/*/README.md index files the adopted project needs.
+    --anchored
     --exclude=README.md
     --exclude=adopt.sh
     --exclude=doc/development/adopting-with-script.md
