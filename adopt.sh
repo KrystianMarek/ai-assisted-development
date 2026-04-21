@@ -16,7 +16,9 @@ Usage: adopt.sh [--target DIR] [--role ROLE] [--dry-run] [--force] [--help]
   --target DIR   Repo to adopt the template into (default: $PWD).
   --role ROLE    Value for `git config beads.role` (default: maintainer).
   --dry-run      Print the commands that would run; make no changes.
-  --force        Overwrite existing AGENTS.md / README.md in the target.
+  --force        Overwrite existing AGENTS.md in the target.
+                 (README.md is never overwritten; a placeholder is only
+                 written when the target has no README.md.)
   --help         Show this message.
 EOF
 }
@@ -104,7 +106,7 @@ copy_template_files() {
   # doc/*/README.md index files that adopted projects need.
   local -a TEMPLATE_EXCLUDES=(
     --anchored
-    --exclude=README.md
+    --exclude=README.md  # paired with write_placeholder_readme(): removing this leaks the template README
     --exclude=adopt.sh
     --exclude=doc/development/adopting-with-script.md
     --exclude=doc/plans/2026-04-17-adopt-script.md
@@ -125,6 +127,10 @@ copy_template_files() {
 }
 
 write_placeholder_readme() {
+  # README.md is adopted-project content, not template content — we do NOT
+  # check $FORCE here because --force means "resync template-owned files".
+  # Pairs with copy_template_files --exclude=README.md. If that exclusion is
+  # removed, this function no-ops and the template's self-description leaks.
   local readme="$TARGET/README.md"
   if [[ -f "$readme" ]]; then
     echo "README.md already exists in $TARGET, leaving it alone"
