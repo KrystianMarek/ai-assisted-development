@@ -10,29 +10,75 @@ A **project template** for starting new repositories that will be built collabor
 - **Pre-commit quality gates** (`.pre-commit-config.yaml` + `.markdownlint.yaml`) — language-agnostic defaults (whitespace, EOF, merge-conflict, YAML, markdown) that enforce the *"work is not complete until `git push` succeeds"* rule before a commit can land.
 - **Multi-agent-friendly workflow** — embraces `bd worktree create` so several agents can work in parallel on independent tickets without stomping on each other's working tree.
 
-## Bootstrapping a new project from this template
+## Adopting this template
 
-0. **Shortcut:** `bash /path/to/ai-assisted-development/adopt.sh --target .` automates steps 1 and the mechanical parts of step 2. Continue below only if you want to walk through the checklist by hand.
-1. Copy this repository (either as a GitHub template, or `git clone` + `rm -rf .git && git init`).
-2. Open `AGENTS.md` and work through the **Project Initialization Checklist** at the top:
-   - Install `pre-commit` and register hooks.
-   - Install Dolt (database engine for bd).
-   - Install `bd` and run `bd init` (new project) or `bd bootstrap` (existing project with Dolt data).
-   - Install bd hooks and fix the `.git/hooks/pre-commit` ordering so bd runs before the pre-commit framework `exec`s.
-   - Run `bd doctor --fix --yes` to catch remaining issues.
-   - Fill in the Project Overview and Development Conventions sections.
-3. **Delete the Project Initialization Checklist section from `AGENTS.md`** once everything is green — its job is done.
+There are three ways to adopt the template, depending on how much you want to drive yourself.
+
+### Option A — ask an agent to do it
+
+Clone this repo somewhere local, then in your target project's agent session say:
+
+> **adopt /absolute/path/to/ai-assisted-development**
+
+Any agent that reads this `README.md` (or `AGENTS.md`) will understand "adopt" as: run `adopt.sh` against the current repo if prerequisites are present, otherwise walk the **Project Initialization Checklist** at the top of `AGENTS.md` by hand. The agent should:
+
+1. `cd` into the target repo (or pass `--target`).
+2. Run `bash /absolute/path/to/ai-assisted-development/adopt.sh --target . --dry-run` and show you the plan.
+3. Re-run without `--dry-run` once you approve.
+4. Walk you through the manual follow-ups `adopt.sh` cannot automate (Project Overview, Development Conventions, replacing the placeholder `README.md`, deleting the Initialization Checklist section).
+
+### Option B — run `adopt.sh` yourself
+
+From a checkout of this template, run the script against your target repo:
+
+```bash
+# Preview only — no changes:
+bash /path/to/ai-assisted-development/adopt.sh --target /path/to/your/repo --dry-run
+
+# Execute:
+bash /path/to/ai-assisted-development/adopt.sh --target /path/to/your/repo
+```
+
+Flags:
+
+| Flag | Purpose |
+|---|---|
+| `--target DIR` | Repo to adopt into (default: current working directory). Must already be a git repo — run `git init` first if not. |
+| `--role ROLE` | Sets `git config beads.role` (default: `maintainer`). |
+| `--dry-run` | Print the commands that would run; make no changes. Always preview first. |
+| `--force` | Overwrite an existing `AGENTS.md` in the target. `README.md` is **never** overwritten — a placeholder is only written when the target has no README. |
+| `--help` | Show usage. |
+
+Prerequisites the script checks for upfront: `git`, `pre-commit`, `dolt`, `bd`. It will list any missing tool with an install hint and exit before touching the target.
+
+What `adopt.sh` does:
+
+- Copies the template skeleton (`AGENTS.md`, `CLAUDE.md` symlink, `.pre-commit-config.yaml`, `.markdownlint.yaml`, `.claude/settings.json`, `.gitignore`, `LICENSE`, `doc/**/README.md`).
+- Writes a placeholder `README.md` if the target has none.
+- Runs `pre-commit install`, `bd init`, and merges the BEADS pre-commit hook block above the framework `exec` so both run.
+- Sets `git config beads.role` and unsets `core.hooksPath` so the merged hook fires.
+
+What `adopt.sh` does **not** do — you still have to:
+
+- Pin `.pre-commit-config.yaml` revisions to the latest at adoption time.
+- Fill in **Project Overview** and **Development Conventions** in `AGENTS.md`.
+- Replace the placeholder `README.md` with real project content.
+- **Delete the Project Initialization Checklist section** from `AGENTS.md` once everything is green.
+
+See [`doc/development/adopting-with-script.md`](./doc/development/adopting-with-script.md) for the full design notes and the list of template-about-template files that are deliberately excluded.
+
+### Option C — fully manual
+
+Skip `adopt.sh` entirely and walk the **Project Initialization Checklist** at the top of `AGENTS.md`. The checklist is always authoritative; it covers the same steps `adopt.sh` automates plus the manual follow-ups.
 
 ### Adopting into an existing repository
 
-The template also works for retrofitting an existing project. Key differences:
+`adopt.sh` is safe to run against repositories that already have content. Things to know:
 
-`adopt.sh` handles the file copy, pre-commit install, `bd init`, and hook wiring — run it with `--dry-run` first to see exactly what it would do. It will refuse to overwrite an existing `AGENTS.md` without `--force`.
-
-- If the repo already has a `CLAUDE.md`, merge its project-specific content into `AGENTS.md` before replacing `CLAUDE.md` with the symlink.
-- If the repo already has Dolt refs in its git remote, use `bd bootstrap` instead of `bd init`.
-- The first `pre-commit run --all-files` will flag pre-existing lint violations — fix them in a dedicated cleanup commit or use `--no-verify` for the adoption commit.
-- Keep existing `doc/` READMEs if they already have richer content than the template scaffolds.
+- `adopt.sh` refuses to overwrite an existing `AGENTS.md` without `--force`. If the repo already has a substantial `CLAUDE.md`, merge its project-specific content into `AGENTS.md` **before** replacing `CLAUDE.md` with the symlink.
+- If the repo already has Dolt refs in its git remote, use `bd bootstrap` (not `bd init`) and **restart the Dolt server** afterwards: `bd dolt stop && bd dolt start`.
+- The first `pre-commit run --all-files` will flag pre-existing lint violations — fix them in a dedicated cleanup commit, or use `git commit --no-verify` for the adoption commit and clean up in a follow-up.
+- Existing `doc/` READMEs with richer content than the template scaffolds are preserved by default (`tar --skip-old-files`); pass `--force` only when you want to resync from upstream.
 
 ## Layout at a glance
 
