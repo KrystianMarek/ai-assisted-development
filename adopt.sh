@@ -110,6 +110,8 @@ copy_template_files() {
     --exclude=adopt.sh
     --exclude=doc/development/adopting-with-script.md
     --exclude=doc/plans/2026-04-17-adopt-script.md
+    --exclude=doc/plans/2026-04-20-adopt-sh-feedback.md
+    --exclude=doc/inbox/2026-04-20-blog-project-adopt-sh-feedback.md
     --exclude=test
     --exclude='test/*'
   )

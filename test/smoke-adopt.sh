@@ -9,7 +9,9 @@ TEMPLATE="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 WORKDIR='' WORKDIR2='' WORKDIR3=''
 cleanup() {
-  [[ -n "$WORKDIR3" && -d "$WORKDIR3/.git/hooks" ]] && chmod 755 "$WORKDIR3/.git/hooks" 2>/dev/null || true
+  if [[ -n "$WORKDIR3" && -d "$WORKDIR3/.git/hooks" ]]; then
+    chmod 755 "$WORKDIR3/.git/hooks" 2>/dev/null || true
+  fi
   rm -rf "${WORKDIR:-}" "${WORKDIR2:-}" "${WORKDIR3:-}"
 }
 trap cleanup EXIT
@@ -39,9 +41,11 @@ check "beads.role configured"               "[[ \"\$(git -C '$WORKDIR' config be
 check "adopt.sh NOT copied to target"        "[[ ! -e '$WORKDIR/adopt.sh' ]]"
 check "adopting-with-script.md NOT copied"   "[[ ! -e '$WORKDIR/doc/development/adopting-with-script.md' ]]"
 check "adopt-script plan NOT copied"         "[[ ! -e '$WORKDIR/doc/plans/2026-04-17-adopt-script.md' ]]"
+check "adopt-sh feedback plan NOT copied"    "[[ ! -e '$WORKDIR/doc/plans/2026-04-20-adopt-sh-feedback.md' ]]"
+check "blog-project feedback inbox NOT copied" "[[ ! -e '$WORKDIR/doc/inbox/2026-04-20-blog-project-adopt-sh-feedback.md' ]]"
 check "test/ directory NOT copied"           "[[ ! -e '$WORKDIR/test' ]]"
 check "placeholder README written"           "grep -q 'TODO: one-paragraph description' '$WORKDIR/README.md'"
-check "template README NOT leaked"           "! grep -q 'ai-assisted-development template' '$WORKDIR/README.md'"
+check "template README NOT leaked"           "! grep -q 'project template' '$WORKDIR/README.md'"
 check "BEADS-INTEGRATION markers in AGENTS.md" "grep -q 'BEADS-INTEGRATION:BEGIN' '$WORKDIR/AGENTS.md'"
 
 # Simulate a user filling in Project Overview, then re-run without --force.

@@ -20,6 +20,8 @@ These files exist in the template but are about the template itself, and are del
 - `adopt.sh` (this convenience script)
 - `doc/development/adopting-with-script.md` (this document)
 - `doc/plans/2026-04-17-adopt-script.md` (plan that produced `adopt.sh`)
+- `doc/plans/2026-04-20-adopt-sh-feedback.md` (follow-up plan addressing real-adoption feedback)
+- `doc/inbox/2026-04-20-blog-project-adopt-sh-feedback.md` (the feedback that drove the follow-up)
 - `test/` (smoke test for `adopt.sh`)
 
 ## What it skips (manual steps)
