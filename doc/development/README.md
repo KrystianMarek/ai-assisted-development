@@ -18,7 +18,7 @@ Descriptive kebab-case filenames (e.g., `test-strategy.md`, `dependency-upgrade-
 
 | Document | Description |
 |----------|-------------|
-| _none yet_ | — |
+| [adopting-with-script.md](adopting-with-script.md) | Guide to using `adopt.sh` for template bootstrap automation |
 
 ## Adding Documentation
 

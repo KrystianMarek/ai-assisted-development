@@ -13,7 +13,7 @@ This directory contains implementation plans, feature roadmaps, and design docum
 
 | Plan | Description | Status | Date |
 |------|-------------|--------|------|
-| _none yet_ | — | — | — |
+| [adopt.sh](2026-04-17-adopt-script.md) | Automate template adoption | Parked | 2026-04-17 |
 
 Status vocabulary: `Planning` → `Approved` → `Active` → `Complete` / `Superseded` / `Parked` / `Disabled`.
 

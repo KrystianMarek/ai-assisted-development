@@ -12,6 +12,7 @@ A **project template** for starting new repositories that will be built collabor
 
 ## Bootstrapping a new project from this template
 
+0. **Shortcut:** `bash /path/to/ai-assisted-development/adopt.sh --target .` automates steps 1 and the mechanical parts of step 2. Continue below only if you want to walk through the checklist by hand.
 1. Copy this repository (either as a GitHub template, or `git clone` + `rm -rf .git && git init`).
 2. Open `AGENTS.md` and work through the **Project Initialization Checklist** at the top:
    - Install `pre-commit` and register hooks.
@@ -25,6 +26,8 @@ A **project template** for starting new repositories that will be built collabor
 ### Adopting into an existing repository
 
 The template also works for retrofitting an existing project. Key differences:
+
+`adopt.sh` handles the file copy, pre-commit install, `bd init`, and hook wiring — run it with `--dry-run` first to see exactly what it would do. It will refuse to overwrite an existing `AGENTS.md` without `--force`.
 
 - If the repo already has a `CLAUDE.md`, merge its project-specific content into `AGENTS.md` before replacing `CLAUDE.md` with the symlink.
 - If the repo already has Dolt refs in its git remote, use `bd bootstrap` instead of `bd init`.

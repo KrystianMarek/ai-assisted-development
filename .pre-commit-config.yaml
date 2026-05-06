@@ -20,3 +20,8 @@ repos:
         args: [--config, .markdownlint.yaml]
         # .beads/ is managed by the bd tool; don't enforce our style on its docs.
         exclude: ^\.beads/
+
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.10.0
+    hooks:
+      - id: shellcheck

@@ -8,6 +8,8 @@ This file provides guidance to any agent working in this repository — Claude C
 
 ## ⏱️ Project Initialization Checklist — REMOVE THIS SECTION AFTER COMPLETION
 
+> **Shortcut:** from a checkout of this template, run `./adopt.sh --target /path/to/your/repo` to automate steps 1–5 below. Steps 6 (Project Overview, Dev Conventions, delete this checklist) are still manual. The manual walkthrough remains authoritative if anything in `adopt.sh` fails.
+
 This section is **temporal**: it runs once, when the project is first cloned or scaffolded from this template. Work through it with the user, tick each box, and **delete this whole section from AGENTS.md** when finished so it does not nag every subsequent session.
 
 ### 1. Install git pre-commit hooks
@@ -59,7 +61,7 @@ If the user prefers another runner (`prek`, `husky`, `lefthook`), swap it in —
 
 ### 3. Install and initialize `bd` (beads)
 
-Issue tracking in this template is done with [`bd`](https://github.com/steveyegge/beads). It must be on `PATH` before any issues are created.
+Issue tracking in this template is done with [`bd`](https://github.com/gastownhall/beads). It must be on `PATH` before any issues are created.
 
 **Action:**
 
@@ -69,9 +71,9 @@ Issue tracking in this template is done with [`bd`](https://github.com/steveyegg
   ```
 - [ ] If the command is empty, **ask the user for permission to install**, then run:
   ```bash
-  curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/gastownhall/beads/main/scripts/install.sh | bash
   ```
-  Reference: <https://github.com/steveyegge/beads>
+  Reference: <https://github.com/gastownhall/beads>
 - [ ] **Initialize the database** — choose the right command for your situation:
 
   **New project (no existing Dolt data in the git remote):**
@@ -139,6 +141,7 @@ Issue tracking in this template is done with [`bd`](https://github.com/steveyegg
 
 - [ ] Replace the **Project Overview** placeholder below with the real project name, purpose, primary language, and package manager.
 - [ ] Populate the **Development Conventions** section with the stack's rules (test runner, linter, branch strategy, etc.).
+- [ ] Replace the placeholder `README.md` (written by `adopt.sh` when no README existed) with a real project description — or leave your pre-existing README as-is.
 - [ ] If adopting into an existing repo with a substantial `CLAUDE.md`, merge its project-specific content into the appropriate sections of this file before replacing `CLAUDE.md` with the symlink.
 - [ ] **Delete this entire "Project Initialization Checklist" section.** Its job is done.
 
@@ -199,7 +202,7 @@ doc/
 
 ## Issue Tracking with `bd` (beads)
 
-This project uses [`bd`](https://github.com/steveyegge/beads) for issue tracking — a dependency-aware, AI-native tracker where issues live in a Dolt database in `.beads/` at the project root.
+This project uses [`bd`](https://github.com/gastownhall/beads) for issue tracking — a dependency-aware, AI-native tracker where issues live in a Dolt database in `.beads/` at the project root.
 
 ### Quick Reference
 
