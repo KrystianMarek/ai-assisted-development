@@ -116,26 +116,26 @@ TEMPLATE_EXCLUDE_PATHS=(
 
 detect_toolchain() {
   # GNU and BSD tar differ on the flags we rely on (--skip-old-files,
-  # --anchored), so we branch on the flavor. Resolve a tar binary first,
-  # preferring GNU tar (gtar) when installed alongside BSD tar (common on
-  # macOS via Homebrew).
+  # --anchored). Rather than trust the vendor string (uname is the OS, not the
+  # tool; tar --version text varies across busybox/bsdarchive/GNU), we PROBE the
+  # capability: build a throwaway empty archive, then attempt to extract it with
+  # the GNU-only flags. Success => GNU fast path; failure => portable BSD path.
+  # Bash has no try/catch, so the attempt is wrapped in `if …; then` (a failing
+  # command there does not trip `set -e`).
   if command -v gtar >/dev/null 2>&1; then
     TAR_BIN="gtar"
   else
     TAR_BIN="tar"
   fi
-  # ADOPT_TAR_FLAVOR forces a code path (mainly for tests / CI). The BSD path
-  # uses only portable tar features, so forcing 'bsd' is safe with any tar;
-  # forcing 'gnu' requires an actual GNU tar.
-  case "${ADOPT_TAR_FLAVOR:-}" in
-    gnu) TAR_IS_GNU=1; return 0 ;;
-    bsd) TAR_IS_GNU=0; return 0 ;;
-  esac
-  if [[ "$TAR_BIN" == "gtar" ]] || "$TAR_BIN" --version 2>/dev/null | grep -qiE 'gnu tar'; then
+  local d
+  d="$(mktemp -d)"
+  if "$TAR_BIN" -cf "$d/empty.tar" -C "$d" . 2>/dev/null \
+     && "$TAR_BIN" -xf "$d/empty.tar" --skip-old-files --anchored -C "$d" 2>/dev/null; then
     TAR_IS_GNU=1
   else
     TAR_IS_GNU=0
   fi
+  rm -rf "$d"
 }
 
 copy_template_files() {
