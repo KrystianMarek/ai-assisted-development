@@ -7,12 +7,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-WORKDIR='' WORKDIR2='' WORKDIR3=''
+WORKDIR='' WORKDIR2='' WORKDIR3='' WORKDIR4=''
 cleanup() {
   if [[ -n "$WORKDIR3" && -d "$WORKDIR3/.git/hooks" ]]; then
     chmod 755 "$WORKDIR3/.git/hooks" 2>/dev/null || true
   fi
-  rm -rf "${WORKDIR:-}" "${WORKDIR2:-}" "${WORKDIR3:-}"
+  rm -rf "${WORKDIR:-}" "${WORKDIR2:-}" "${WORKDIR3:-}" "${WORKDIR4:-}"
 }
 trap cleanup EXIT
 
@@ -96,5 +96,24 @@ set -e
 chmod 755 "$WORKDIR3/.git/hooks"
 check "read-only .git/hooks aborts with non-zero exit" "[[ $rc -ne 0 ]]"
 check "read-only error mentions sandbox"               "grep -q 'sandboxed agent harnesses' <<<\"\$err_output\""
+
+# Scenario 4: force the BSD copy path (staging + rm-excludes + skip-copy) via
+# ADOPT_TAR_FLAVOR, so it is exercised even on GNU-only hosts (e.g. Linux CI).
+# The BSD path uses only portable tar features, so this is safe with any tar.
+WORKDIR4="$(mktemp -d)"
+git -C "$WORKDIR4" init -q
+git -C "$WORKDIR4" remote add origin "ssh://git@example.invalid/smoke4.git"
+ADOPT_TAR_FLAVOR=bsd "$TEMPLATE/adopt.sh" --target "$WORKDIR4" --role maintainer >/dev/null
+check "BSD path: AGENTS.md copied"          "[[ -f '$WORKDIR4/AGENTS.md' ]]"
+check "BSD path: CLAUDE.md symlink preserved" "[[ -L '$WORKDIR4/CLAUDE.md' ]]"
+check "BSD path: doc/index.md copied"       "[[ -f '$WORKDIR4/doc/index.md' ]]"
+check "BSD path: adopt.sh excluded"         "[[ ! -e '$WORKDIR4/adopt.sh' ]]"
+check "BSD path: test/ excluded"            "[[ ! -e '$WORKDIR4/test' ]]"
+check "BSD path: placeholder README written" "grep -q 'TODO: one-paragraph description' '$WORKDIR4/README.md'"
+check "BSD path: overview placeholder written" "grep -q 'TODO: what this project does' '$WORKDIR4/doc/overview.md'"
+# Re-run must not clobber a filled-in page (skip-existing).
+printf '\n# SMOKE-SENTINEL-BSD\n' >> "$WORKDIR4/doc/overview.md"
+ADOPT_TAR_FLAVOR=bsd "$TEMPLATE/adopt.sh" --target "$WORKDIR4" --role maintainer >/dev/null
+check "BSD path: re-run preserves user edits" "grep -q 'SMOKE-SENTINEL-BSD' '$WORKDIR4/doc/overview.md'"
 
 if (( fail )); then echo "smoke test FAILED"; exit 1; else echo "smoke test passed"; fi

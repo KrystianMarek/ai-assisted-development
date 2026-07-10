@@ -91,40 +91,79 @@ EOF
   fi
 }
 
+# Template-about-template paths that adopted projects must NOT receive.
+# The GNU path renders these as anchored tar --exclude globs; the BSD path
+# deletes them by exact name from a staging dir. Keep this list in sync with
+# doc/development/adopting-with-script.md.
+#
+# README.md is paired with write_placeholder_readme(); the wiki core pages
+# (overview/goals/status/log) are paired with write_wiki_placeholders() —
+# removing either from this list leaks THIS repo's own content downstream.
+TEMPLATE_EXCLUDE_PATHS=(
+  README.md
+  adopt.sh
+  doc/development/adopting-with-script.md
+  doc/plans/2026-04-17-adopt-script.md
+  doc/plans/2026-04-20-adopt-sh-feedback.md
+  doc/plans/2026-07-10-llm-wiki-migration.md
+  doc/inbox/2026-04-20-blog-project-adopt-sh-feedback.md
+  doc/overview.md
+  doc/goals.md
+  doc/status.md
+  doc/log.md
+  test
+)
+
+detect_toolchain() {
+  # GNU and BSD tar differ on the flags we rely on (--skip-old-files,
+  # --anchored), so we branch on the flavor. Resolve a tar binary first,
+  # preferring GNU tar (gtar) when installed alongside BSD tar (common on
+  # macOS via Homebrew).
+  if command -v gtar >/dev/null 2>&1; then
+    TAR_BIN="gtar"
+  else
+    TAR_BIN="tar"
+  fi
+  # ADOPT_TAR_FLAVOR forces a code path (mainly for tests / CI). The BSD path
+  # uses only portable tar features, so forcing 'bsd' is safe with any tar;
+  # forcing 'gnu' requires an actual GNU tar.
+  case "${ADOPT_TAR_FLAVOR:-}" in
+    gnu) TAR_IS_GNU=1; return 0 ;;
+    bsd) TAR_IS_GNU=0; return 0 ;;
+  esac
+  if [[ "$TAR_BIN" == "gtar" ]] || "$TAR_BIN" --version 2>/dev/null | grep -qiE 'gnu tar'; then
+    TAR_IS_GNU=1
+  else
+    TAR_IS_GNU=0
+  fi
+}
+
 copy_template_files() {
   # git archive HEAD emits only tracked files and preserves the CLAUDE.md
-  # symlink. We pipe through tar -x so we can apply --exclude filters for
-  # template-about-template artefacts that adopted projects should not
-  # receive (see TEMPLATE_EXCLUDES below).
-  #
-  # --skip-old-files silently skips existing files and exits 0, so re-runs
-  # do not clobber a filled-in AGENTS.md and do not trip set -euo pipefail.
-  # --force (FORCE=1) drops the flag to resync with upstream template changes.
-  #
-  # --anchored makes --exclude match only against the leading path component,
-  # so --exclude=README.md drops the root README.md without also dropping
-  # doc/*/README.md index files that adopted projects need.
-  local -a TEMPLATE_EXCLUDES=(
-    --anchored
-    --exclude=README.md  # paired with write_placeholder_readme(): removing this leaks the template README
-    --exclude=adopt.sh
-    --exclude=doc/development/adopting-with-script.md
-    --exclude=doc/plans/2026-04-17-adopt-script.md
-    --exclude=doc/plans/2026-04-20-adopt-sh-feedback.md
-    --exclude=doc/plans/2026-07-10-llm-wiki-migration.md
-    --exclude=doc/inbox/2026-04-20-blog-project-adopt-sh-feedback.md
-    # Wiki core pages carry THIS repo's content; paired with
-    # write_wiki_placeholders(). Removing these exclusions leaks template state.
-    --exclude=doc/overview.md
-    --exclude=doc/goals.md
-    --exclude=doc/status.md
-    --exclude=doc/log.md
-    --exclude=test
-    --exclude='test/*'
-  )
-  local -a tar_cmd=(tar -x)
+  # symlink. We filter out template-about-template artefacts (see
+  # TEMPLATE_EXCLUDE_PATHS) and never clobber files the target already has
+  # (unless --force). The mechanism differs by tar flavor.
+  detect_toolchain
+  if [[ "$TAR_IS_GNU" == 1 ]]; then
+    copy_template_files_gnu
+  else
+    copy_template_files_bsd
+  fi
+}
+
+copy_template_files_gnu() {
+  # GNU tar: extract straight into TARGET.
+  #   --anchored           match --exclude from the path root, so README.md drops
+  #                        the root file but not doc/*/README.md index files.
+  #   --exclude=$p/*       companion glob that drops directory contents (test/*).
+  #   --skip-old-files     silently keep existing files (re-run safe, exits 0);
+  #                        --force (FORCE=1) drops it to resync with upstream.
+  local -a tar_cmd=("$TAR_BIN" -x --anchored)
   [[ "$FORCE" == 1 ]] || tar_cmd+=(--skip-old-files)
-  tar_cmd+=("${TEMPLATE_EXCLUDES[@]}")
+  local p
+  for p in "${TEMPLATE_EXCLUDE_PATHS[@]}"; do
+    tar_cmd+=(--exclude="$p" --exclude="$p/*")
+  done
   tar_cmd+=(-C "$TARGET")
   if [[ "$DRY_RUN" == 1 ]]; then
     printf 'DRY: git -C %q archive HEAD |' "$SCRIPT_DIR"
@@ -133,6 +172,53 @@ copy_template_files() {
     return 0
   fi
   git -C "$SCRIPT_DIR" archive HEAD | "${tar_cmd[@]}"
+}
+
+copy_template_files_bsd() {
+  # BSD/libarchive tar lacks --skip-old-files and --anchored, and its exclude
+  # matching is not path-anchored. So extract into a clean staging dir (no
+  # clobber concerns there), delete the excluded paths by exact name, then copy
+  # into TARGET with a portable, symlink-preserving, skip-existing copy.
+  if [[ "$DRY_RUN" == 1 ]]; then
+    printf 'DRY: git -C %q archive HEAD | %s -x -C <staging>\n' "$SCRIPT_DIR" "$TAR_BIN"
+    printf 'DRY: rm -rf from <staging>:'; printf ' %q' "${TEMPLATE_EXCLUDE_PATHS[@]}"; printf '\n'
+    printf 'DRY: copy <staging> -> %q (skip existing files' "$TARGET"
+    [[ "$FORCE" == 1 ]] && printf ', --force overwrites'
+    printf ')\n'
+    return 0
+  fi
+  local staging
+  staging="$(mktemp -d)"
+  # shellcheck disable=SC2064  # expand $staging now so the trap targets this dir
+  trap "rm -rf '$staging'" RETURN
+  git -C "$SCRIPT_DIR" archive HEAD | "$TAR_BIN" -x -C "$staging"
+  local p
+  for p in "${TEMPLATE_EXCLUDE_PATHS[@]}"; do
+    rm -rf "${staging:?}/$p"
+  done
+  copy_skip_existing "$staging" "$TARGET"
+}
+
+copy_skip_existing() {
+  # Copy every entry from src into dst: recreate directories, preserve symlinks,
+  # and skip files that already exist unless FORCE=1. Uses only cp flags common
+  # to GNU and BSD cp (-P preserve symlinks, -f force when we do overwrite);
+  # existence is checked in bash so we never depend on cp's -n/--skip-old-files.
+  local src="$1" dst="$2" path rel target
+  while IFS= read -r -d '' path; do
+    [[ "$path" == "$src" ]] && continue
+    rel="${path#"$src"/}"
+    target="$dst/$rel"
+    if [[ -d "$path" && ! -L "$path" ]]; then
+      mkdir -p "$target"
+      continue
+    fi
+    if [[ ( -e "$target" || -L "$target" ) && "$FORCE" != 1 ]]; then
+      continue
+    fi
+    mkdir -p "$(dirname "$target")"
+    cp -Pf "$path" "$target"
+  done < <(find "$src" -print0)
 }
 
 write_placeholder_readme() {
@@ -323,11 +409,15 @@ wire_bd_hook() {
   [[ -n "$beads_block" ]] || { echo "could not extract BEADS block from $source" >&2; return 1; }
   local current
   current="$(cat "$hook")"
+  # Strip the existing shebang (if any) with pure bash — the GNU-only sed
+  # address form `sed '1{/^#!/d}'` is rejected by BSD sed on macOS.
+  if [[ "$current" == '#!'*$'\n'* ]]; then
+    current="${current#*$'\n'}"
+  fi
   {
     printf '#!/usr/bin/env bash\n'
     printf '%s\n\n' "$beads_block"
-    # Strip the existing shebang (if any) from the current file.
-    printf '%s\n' "$current" | sed '1{/^#!/d}'
+    printf '%s\n' "$current"
   } > "$hook.new"
   mv "$hook.new" "$hook"
   chmod +x "$hook"

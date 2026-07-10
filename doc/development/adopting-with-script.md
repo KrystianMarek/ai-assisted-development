@@ -5,7 +5,7 @@
 ## What `adopt.sh` does
 
 - Runs a **writability preflight** on `.git/hooks/` and `.git/config` so sandboxed agent environments (Claude Code, Codex, Gemini) fail fast with an actionable error instead of exiting silently.
-- Copies the **essential template skeleton** to your target (via `git archive HEAD | tar -x`): `AGENTS.md`, `CLAUDE.md` symlink, `.pre-commit-config.yaml`, `.claude/settings.json`, `.gitignore`, `.markdownlint.yaml`, `LICENSE`, the per-directory `README.md` index files under `doc/`, the wiki catalog `doc/index.md`, and the reusable `doc/runbooks/wiki-lint.md`.
+- Copies the **essential template skeleton** to your target (via `git archive HEAD` piped to `tar`): `AGENTS.md`, `CLAUDE.md` symlink, `.pre-commit-config.yaml`, `.claude/settings.json`, `.gitignore`, `.markdownlint.yaml`, `LICENSE`, the per-directory `README.md` index files under `doc/`, the wiki catalog `doc/index.md`, and the reusable `doc/runbooks/wiki-lint.md`. The copy step **auto-detects the tar flavor** (GNU vs BSD/libarchive): GNU tar extracts directly with anchored `--exclude`/`--skip-old-files`, while BSD tar (default on macOS) extracts to a staging dir, drops the excluded paths, and copies in without clobbering existing files. `gtar` is preferred when installed.
 - Writes a **placeholder `README.md`** if the target has none; never overwrites a pre-existing `README.md`.
 - Writes **placeholder wiki core pages** (`doc/overview.md`, `doc/goals.md`, `doc/status.md`, `doc/log.md`) if the target lacks them; never overwrites pages you have filled in. These are project content, so the template's own filled-in copies are excluded and fresh scaffolds are written instead (same pattern as `README.md`).
 - Installs and registers pre-commit hooks.
