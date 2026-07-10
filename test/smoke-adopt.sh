@@ -42,17 +42,37 @@ check "adopt.sh NOT copied to target"        "[[ ! -e '$WORKDIR/adopt.sh' ]]"
 check "adopting-with-script.md NOT copied"   "[[ ! -e '$WORKDIR/doc/development/adopting-with-script.md' ]]"
 check "adopt-script plan NOT copied"         "[[ ! -e '$WORKDIR/doc/plans/2026-04-17-adopt-script.md' ]]"
 check "adopt-sh feedback plan NOT copied"    "[[ ! -e '$WORKDIR/doc/plans/2026-04-20-adopt-sh-feedback.md' ]]"
+check "llm-wiki migration plan NOT copied"   "[[ ! -e '$WORKDIR/doc/plans/2026-07-10-llm-wiki-migration.md' ]]"
 check "blog-project feedback inbox NOT copied" "[[ ! -e '$WORKDIR/doc/inbox/2026-04-20-blog-project-adopt-sh-feedback.md' ]]"
 check "test/ directory NOT copied"           "[[ ! -e '$WORKDIR/test' ]]"
 check "placeholder README written"           "grep -q 'TODO: one-paragraph description' '$WORKDIR/README.md'"
 check "template README NOT leaked"           "! grep -q 'project template' '$WORKDIR/README.md'"
 check "BEADS-INTEGRATION markers in AGENTS.md" "grep -q 'BEADS-INTEGRATION:BEGIN' '$WORKDIR/AGENTS.md'"
 
-# Simulate a user filling in Project Overview, then re-run without --force.
-# The edited AGENTS.md must survive.
+# LLM Wiki: generic scaffolds ARE copied; the wiki catalog + lint runbook too.
+check "doc/index.md copied"                  "[[ -f '$WORKDIR/doc/index.md' ]]"
+check "doc/sources/README.md copied"         "[[ -f '$WORKDIR/doc/sources/README.md' ]]"
+check "doc/considerations/README.md copied"  "[[ -f '$WORKDIR/doc/considerations/README.md' ]]"
+check "doc/runbooks/wiki-lint.md copied"     "[[ -f '$WORKDIR/doc/runbooks/wiki-lint.md' ]]"
+check "AGENTS.md has LLM Wiki schema section" "grep -q 'Project as an LLM Wiki' '$WORKDIR/AGENTS.md'"
+
+# LLM Wiki: core pages are written as placeholders, not the template's own copies.
+check "placeholder overview.md written"      "grep -q 'TODO: what this project does' '$WORKDIR/doc/overview.md'"
+check "placeholder goals.md written"         "[[ -f '$WORKDIR/doc/goals.md' ]] && grep -q 'North star' '$WORKDIR/doc/goals.md'"
+check "placeholder status.md written"        "[[ -f '$WORKDIR/doc/status.md' ]] && grep -q 'Last updated: TODO' '$WORKDIR/doc/status.md'"
+check "placeholder log.md written"           "grep -q 'bootstrapped from ai-assisted-development' '$WORKDIR/doc/log.md'"
+check "overview.md template content NOT leaked" "! grep -q 'is a project template for starting new repositories' '$WORKDIR/doc/overview.md'"
+check "goals.md template content NOT leaked"  "! grep -q 'Zero-friction adoption' '$WORKDIR/doc/goals.md'"
+check "status.md template content NOT leaked" "! grep -q 'v0.0.1' '$WORKDIR/doc/status.md'"
+check "log.md template content NOT leaked"    "! grep -q 'LLM Wiki migration' '$WORKDIR/doc/log.md'"
+
+# Simulate a user filling in Project Overview and a wiki page, then re-run
+# without --force. The edited AGENTS.md and wiki page must survive.
 printf '\n# SMOKE-SENTINEL do-not-clobber\n' >> "$WORKDIR/AGENTS.md"
+printf '\n# SMOKE-SENTINEL-OVERVIEW\n' >> "$WORKDIR/doc/overview.md"
 "$TEMPLATE/adopt.sh" --target "$WORKDIR" --role maintainer >/dev/null
 check "re-run preserves user edits to AGENTS.md" "grep -q 'SMOKE-SENTINEL' '$WORKDIR/AGENTS.md'"
+check "re-run preserves user edits to overview.md" "grep -q 'SMOKE-SENTINEL-OVERVIEW' '$WORKDIR/doc/overview.md'"
 
 # Scenario 2: target already has a README — adopt.sh must leave it alone.
 WORKDIR2="$(mktemp -d)"

@@ -5,8 +5,9 @@
 ## What `adopt.sh` does
 
 - Runs a **writability preflight** on `.git/hooks/` and `.git/config` so sandboxed agent environments (Claude Code, Codex, Gemini) fail fast with an actionable error instead of exiting silently.
-- Copies the **essential template skeleton** to your target (via `git archive HEAD | tar -x`): `AGENTS.md`, `CLAUDE.md` symlink, `.pre-commit-config.yaml`, `.claude/settings.json`, `.gitignore`, `.markdownlint.yaml`, `LICENSE`, and the per-directory `README.md` index files under `doc/`.
+- Copies the **essential template skeleton** to your target (via `git archive HEAD | tar -x`): `AGENTS.md`, `CLAUDE.md` symlink, `.pre-commit-config.yaml`, `.claude/settings.json`, `.gitignore`, `.markdownlint.yaml`, `LICENSE`, the per-directory `README.md` index files under `doc/`, the wiki catalog `doc/index.md`, and the reusable `doc/runbooks/wiki-lint.md`.
 - Writes a **placeholder `README.md`** if the target has none; never overwrites a pre-existing `README.md`.
+- Writes **placeholder wiki core pages** (`doc/overview.md`, `doc/goals.md`, `doc/status.md`, `doc/log.md`) if the target lacks them; never overwrites pages you have filled in. These are project content, so the template's own filled-in copies are excluded and fresh scaffolds are written instead (same pattern as `README.md`).
 - Installs and registers pre-commit hooks.
 - Initializes the Dolt database for `bd` issue tracking and runs `bd init`.
 - Wires `bd` hooks into `.git/hooks/pre-commit` by merging the BEADS integration block from `.beads/hooks/pre-commit`.
@@ -21,7 +22,9 @@ These files exist in the template but are about the template itself, and are del
 - `doc/development/adopting-with-script.md` (this document)
 - `doc/plans/2026-04-17-adopt-script.md` (plan that produced `adopt.sh`)
 - `doc/plans/2026-04-20-adopt-sh-feedback.md` (follow-up plan addressing real-adoption feedback)
+- `doc/plans/2026-07-10-llm-wiki-migration.md` (plan that produced the LLM Wiki layout)
 - `doc/inbox/2026-04-20-blog-project-adopt-sh-feedback.md` (the feedback that drove the follow-up)
+- `doc/overview.md`, `doc/goals.md`, `doc/status.md`, `doc/log.md` (this repo's own wiki content — placeholders are written instead)
 - `test/` (smoke test for `adopt.sh`)
 
 ## What it skips (manual steps)
@@ -52,4 +55,7 @@ If the output looks correct, run without `--dry-run` to execute.
 
 ## Extending `adopt.sh` when the template grows
 
-New tracked files in the template are automatically copied by `git archive HEAD` on the next adoption run — **no edit to `adopt.sh` is needed**. Changes to `adopt.sh` are only required when introducing a new *setup step* (not a new file). In that case, write a new function and call it from `main()` in the appropriate order.
+New tracked files in the template are automatically copied by `git archive HEAD` on the next adoption run — **no edit to `adopt.sh` is needed** for generic scaffolds (READMEs, reusable runbooks). Editing `adopt.sh` is only required in two cases:
+
+1. **A new *setup step*** (not just a file): write a new function and call it from `main()` in the appropriate order.
+2. **A file that carries this repo's own content** (e.g., a filled-in wiki page or a template-about-template plan): add it to `TEMPLATE_EXCLUDES` so it is not leaked into adopted projects, and — if the wiki structure needs the page to exist — write a fresh placeholder in `write_wiki_placeholders()` (mirroring `write_placeholder_readme()`).

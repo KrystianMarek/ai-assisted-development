@@ -111,7 +111,14 @@ copy_template_files() {
     --exclude=doc/development/adopting-with-script.md
     --exclude=doc/plans/2026-04-17-adopt-script.md
     --exclude=doc/plans/2026-04-20-adopt-sh-feedback.md
+    --exclude=doc/plans/2026-07-10-llm-wiki-migration.md
     --exclude=doc/inbox/2026-04-20-blog-project-adopt-sh-feedback.md
+    # Wiki core pages carry THIS repo's content; paired with
+    # write_wiki_placeholders(). Removing these exclusions leaks template state.
+    --exclude=doc/overview.md
+    --exclude=doc/goals.md
+    --exclude=doc/status.md
+    --exclude=doc/log.md
     --exclude=test
     --exclude='test/*'
   )
@@ -151,6 +158,133 @@ This repository was bootstrapped from
 [`ai-assisted-development`](https://github.com/krystianmarek/ai-assisted-development).
 See [`AGENTS.md`](./AGENTS.md) for agent workflow and conventions.
 EOF
+}
+
+write_wiki_placeholders() {
+  # The wiki core pages (overview/goals/status/log) are adopted-project
+  # content, not template content — the template's own copies are excluded
+  # from copy_template_files (see TEMPLATE_EXCLUDES) and fresh placeholders
+  # are written here so doc/index.md's links resolve. Like the README
+  # placeholder, we do NOT honour $FORCE (that means "resync template-owned
+  # files") and we never clobber a page the user already filled in.
+  local doc="$TARGET/doc"
+  local -a pages=(overview.md goals.md status.md log.md)
+  local page path
+  for page in "${pages[@]}"; do
+    path="$doc/$page"
+    if [[ -f "$path" ]]; then
+      echo "doc/$page already exists in $TARGET, leaving it alone"
+      continue
+    fi
+    if [[ "$DRY_RUN" == 1 ]]; then
+      printf 'DRY: write placeholder doc/%s to %q\n' "$page" "$path"
+      continue
+    fi
+    mkdir -p "$doc"
+    case "$page" in
+      overview.md) cat > "$path" <<'EOF'
+# Overview
+
+The synthesis front page of this wiki — the high-level idea, kept current as the
+project evolves. Start here, then follow the links.
+
+## What this is
+
+TODO: what this project does, who uses it, and the headline technology.
+
+**Primary language / runtime:** TODO
+**Package manager:** TODO
+
+## The core idea
+
+This project's `doc/` tree is maintained as a development-focused LLM Wiki — a
+persistent, compounding, interlinked knowledge base that agents keep current.
+See [AGENTS.md → Project as an LLM Wiki](../AGENTS.md#project-as-an-llm-wiki).
+
+## Related
+
+- [goals.md](goals.md) · [status.md](status.md) · [index.md](index.md)
+- [../README.md](../README.md) · [../AGENTS.md](../AGENTS.md)
+EOF
+        ;;
+      goals.md) cat > "$path" <<'EOF'
+# Goals
+
+Long-horizon (north star) and short-horizon (current cycle) goals. When a goal
+is met, move it to "Achieved"; when direction changes, revise it and note the
+change in [log.md](log.md).
+
+## North star (long horizon)
+
+- TODO: the durable direction that rarely changes.
+
+## Current cycle (short horizon)
+
+- [ ] TODO: concrete goals for the active cycle (link `bd` tickets).
+
+## Achieved
+
+- _nothing yet_
+
+## Related
+
+- [overview.md](overview.md) · [status.md](status.md)
+- [vision/](vision/README.md) · [plans/](plans/README.md)
+EOF
+        ;;
+      status.md) cat > "$path" <<'EOF'
+# Status
+
+Current progress snapshot — the narrative complement to `bd status`. Refresh on
+any status change and during each [wiki-lint](runbooks/wiki-lint.md) pass. For
+the live work queue, run `bd ready` and `bd status`.
+
+_Last updated: TODO_
+
+## In progress
+
+- TODO
+
+## Done recently
+
+- TODO
+
+## Blocked / waiting
+
+- _none_
+
+## Next up
+
+- TODO
+
+## Related
+
+- [goals.md](goals.md) · [log.md](log.md) · [index.md](index.md)
+EOF
+        ;;
+      log.md) cat > "$path" <<'EOF'
+# Wiki Log
+
+Append-only chronological record of wiki activity. **Newest entries at the top.**
+
+Each entry starts with a consistent prefix so the log is greppable:
+
+```
+## [YYYY-MM-DD] <type> | <title>
+```
+
+Types: `ingest`, `decision`, `progress`, `lint`.
+Timeline: `grep "^## \[" doc/log.md | head`.
+
+---
+
+## [YYYY-MM-DD] progress | Project bootstrapped from ai-assisted-development template
+
+TODO: replace with the first real log entry.
+EOF
+        ;;
+    esac
+  done
 }
 
 install_precommit() {
@@ -284,6 +418,7 @@ main() {
   check_git_writable
   copy_template_files
   write_placeholder_readme
+  write_wiki_placeholders
   install_precommit
   bd_init
   ensure_beads_markers
