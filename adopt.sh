@@ -16,9 +16,10 @@ Usage: adopt.sh [--target DIR] [--role ROLE] [--dry-run] [--force] [--help]
   --target DIR   Repo to adopt the template into (default: $PWD).
   --role ROLE    Value for `git config beads.role` (default: maintainer).
   --dry-run      Print the commands that would run; make no changes.
-  --force        Overwrite existing AGENTS.md in the target.
-                 (README.md is never overwritten; a placeholder is only
-                 written when the target has no README.md.)
+  --force        Resync template-owned files (overwrite existing ones).
+                 README.md and the wiki core pages (overview.md, goals.md,
+                 status.md, log.md) are NEVER overwritten — placeholders are
+                 only written when the target lacks them.
   --help         Show this message.
 EOF
 }

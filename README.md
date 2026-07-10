@@ -47,15 +47,15 @@ Flags:
 | `--target DIR` | Repo to adopt into (default: current working directory). Must already be a git repo — run `git init` first if not. |
 | `--role ROLE` | Sets `git config beads.role` (default: `maintainer`). |
 | `--dry-run` | Print the commands that would run; make no changes. Always preview first. |
-| `--force` | Overwrite an existing `AGENTS.md` in the target. `README.md` is **never** overwritten — a placeholder is only written when the target has no README. |
+| `--force` | Resync template-owned files (overwrite existing ones). `README.md` and the wiki core pages (`overview.md`, `goals.md`, `status.md`, `log.md`) are **never** overwritten — placeholders are only written when the target lacks them. |
 | `--help` | Show usage. |
 
 Prerequisites the script checks for upfront: `git`, `pre-commit`, `dolt`, `bd`. It will list any missing tool with an install hint and exit before touching the target.
 
 What `adopt.sh` does:
 
-- Copies the template skeleton (`AGENTS.md`, `CLAUDE.md` symlink, `.pre-commit-config.yaml`, `.markdownlint.yaml`, `.claude/settings.json`, `.gitignore`, `LICENSE`, `doc/**/README.md`).
-- Writes a placeholder `README.md` if the target has none.
+- Copies the template skeleton (`AGENTS.md`, `CLAUDE.md` symlink, `.pre-commit-config.yaml`, `.markdownlint.yaml`, `.claude/settings.json`, `.gitignore`, `LICENSE`, the per-directory `doc/**/README.md` index files, the wiki catalog `doc/index.md`, and the reusable `doc/runbooks/wiki-lint.md`). It **auto-detects the `tar` capability** (probes the GNU-only flags; falls back to a portable path on BSD/libarchive/busybox) so it works natively on macOS, Linux, and Alpine.
+- Writes a placeholder `README.md` if the target has none, and placeholder **wiki core pages** (`doc/overview.md`, `doc/goals.md`, `doc/status.md`, `doc/log.md`) if the target lacks them — never overwriting pages you have filled in.
 - Runs `pre-commit install`, `bd init`, and merges the BEADS pre-commit hook block above the framework `exec` so both run.
 - Sets `git config beads.role` and unsets `core.hooksPath` so the merged hook fires.
 
@@ -64,6 +64,7 @@ What `adopt.sh` does **not** do — you still have to:
 - Pin `.pre-commit-config.yaml` revisions to the latest at adoption time.
 - Fill in **Project Overview** and **Development Conventions** in `AGENTS.md`.
 - Replace the placeholder `README.md` with real project content.
+- Fill in the placeholder wiki core pages (`overview.md`, `goals.md`, `status.md`, `log.md`) with real project content.
 - **Delete the Project Initialization Checklist section** from `AGENTS.md` once everything is green.
 
 See [`doc/development/adopting-with-script.md`](./doc/development/adopting-with-script.md) for the full design notes and the list of template-about-template files that are deliberately excluded.
@@ -79,7 +80,7 @@ Skip `adopt.sh` entirely and walk the **Project Initialization Checklist** at th
 - `adopt.sh` refuses to overwrite an existing `AGENTS.md` without `--force`. If the repo already has a substantial `CLAUDE.md`, merge its project-specific content into `AGENTS.md` **before** replacing `CLAUDE.md` with the symlink.
 - If the repo already has Dolt refs in its git remote, use `bd bootstrap` (not `bd init`) and **restart the Dolt server** afterwards: `bd dolt stop && bd dolt start`.
 - The first `pre-commit run --all-files` will flag pre-existing lint violations — fix them in a dedicated cleanup commit, or use `git commit --no-verify` for the adoption commit and clean up in a follow-up.
-- Existing `doc/` READMEs with richer content than the template scaffolds are preserved by default (`tar --skip-old-files`); pass `--force` only when you want to resync from upstream.
+- Existing `doc/` READMEs with richer content than the template scaffolds are preserved by default (existing files are skipped on both the GNU and BSD copy paths); pass `--force` only when you want to resync from upstream. `README.md` and the wiki core pages (`overview.md`, `goals.md`, `status.md`, `log.md`) are **never** overwritten, even with `--force`.
 
 ## Layout at a glance
 
