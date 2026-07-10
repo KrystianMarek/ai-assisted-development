@@ -99,3 +99,10 @@ What other options were evaluated?
 3. Fill in all sections.
 4. Submit for review.
 5. Update this README index when accepted.
+
+## Related
+
+- Wiki hub: [Overview](../overview.md) · [Index](../index.md)
+- [Considerations](../considerations/README.md) — open trade-offs that precede an ADR
+- [System Architecture](../architecture/README.md)
+- [Implementation Plans](../plans/README.md)

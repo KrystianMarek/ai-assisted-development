@@ -14,6 +14,7 @@ This directory contains implementation plans, feature roadmaps, and design docum
 | Plan | Description | Status | Date |
 |------|-------------|--------|------|
 | [adopt.sh](2026-04-17-adopt-script.md) | Automate template adoption | Parked | 2026-04-17 |
+| [LLM Wiki migration](2026-07-10-llm-wiki-migration.md) | Turn `doc/` into a development-focused LLM Wiki | Planning | 2026-07-10 |
 
 Status vocabulary: `Planning` → `Approved` → `Active` → `Complete` / `Superseded` / `Parked` / `Disabled`.
 
@@ -45,6 +46,7 @@ How do we know this is done?
 
 ## Related
 
+- Wiki hub: [Overview](../overview.md) · [Index](../index.md) · [Goals](../goals.md) · [Status](../status.md)
 - [Operational Runbooks](../runbooks/README.md)
 - [Inbox — Incoming Requests](../inbox/README.md)
 - [Architecture Decisions](../decisions/README.md)

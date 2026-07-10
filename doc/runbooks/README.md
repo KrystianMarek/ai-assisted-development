@@ -12,7 +12,7 @@ These are living documents — update them when configuration changes.
 
 | Runbook | Description |
 |---------|-------------|
-| _none yet_ | — |
+| [wiki-lint.md](wiki-lint.md) | Health-check the `doc/` LLM Wiki: freshness, contradictions, orphans, coverage, ticket↔wiki consistency |
 
 ## Runbook Template
 
@@ -57,5 +57,6 @@ Known failure modes and fixes.
 
 ## Related
 
+- Wiki hub: [Overview](../overview.md) · [Index](../index.md)
 - [Implementation Plans](../plans/README.md)
 - [System Architecture](../architecture/README.md)

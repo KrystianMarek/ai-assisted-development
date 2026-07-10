@@ -4,7 +4,8 @@ A **project template** for starting new repositories that will be built collabor
 
 ## What you get
 
-- **`doc/` tree** with nine canonical subdirectories, each seeded with a `README.md` that explains its purpose, naming rules, template for new entries, and an index of its contents.
+- **A development-focused LLM Wiki.** The `doc/` tree is maintained as a persistent, compounding, interlinked knowledge base ([Karpathy's LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)) rather than write-once files. Agents *ingest* new information into it, *query* it with citations, and *lint* it for rot. Root files `doc/overview.md` (high-level idea), `doc/index.md` (master catalog), `doc/log.md` (chronological log), `doc/goals.md` (long/short-horizon goals), and `doc/status.md` (progress) sit above the topical subdirs. See [AGENTS.md → Project as an LLM Wiki](./AGENTS.md#project-as-an-llm-wiki).
+- **`doc/` tree** with canonical subdirectories, each seeded with a `README.md` that explains its purpose, naming rules, template for new entries, and an index of its contents. Includes `sources/` (immutable raw source-of-truth layer) and `considerations/` (open trade-offs and risks).
 - **`AGENTS.md`** — the single source of truth for agent behaviour, covering documentation placement, `bd` (beads) issue tracking with semantic IDs, multi-agent worktree workflow, and the eight-step *Landing the Plane* session-completion protocol. `CLAUDE.md` is a symlink to it so Claude Code reads the same instructions as every other agent.
 - **`bd` issue-tracking ready-to-provision** — dependency-aware, AI-native ticket tracker with git-native merge semantics via [Dolt](https://docs.dolthub.com/). The template does not ship a pre-initialised `.beads/` database (that directory is per-project and contains your own sync-remote URL); the `AGENTS.md` initialization checklist walks you through Dolt installation, `bd init` / `bd bootstrap`, hook ordering, and `bd doctor`. `.claude/settings.json` pre-wires `bd prime` as a `SessionStart`/`PreCompact` hook so workflow context auto-injects once bd is initialised.
 - **Pre-commit quality gates** (`.pre-commit-config.yaml` + `.markdownlint.yaml`) — language-agnostic defaults (whitespace, EOF, merge-conflict, YAML, markdown) that enforce the *"work is not complete until `git push` succeeds"* rule before a commit can land.
@@ -92,19 +93,27 @@ Skip `adopt.sh` entirely and walk the **Project Initialization Checklist** at th
 ├── .gitignore             # Excludes .beads/, .remember/, local Claude settings, Dolt blobs
 # .beads/                  # NOT in template — created locally by `bd init` during bootstrap
 └── doc/
+    ├── overview.md        # Synthesis front page: the high-level idea
+    ├── index.md           # Master catalog of every wiki page
+    ├── log.md             # Append-only chronological log
+    ├── goals.md           # Long-horizon + short-horizon goals
+    ├── status.md          # Current progress snapshot (cross-linked to bd)
     ├── architecture/      # System design and component diagrams
     ├── benchmarks/        # E2E verification scenarios, benchmark results
+    ├── considerations/    # Open trade-offs, risks, unresolved questions
     ├── decisions/         # Architecture Decision Records (ADR)
-    ├── development/       # Developer guides, setup, progress tracking
+    ├── development/       # Developer guides, setup, post-mortems
     ├── guidance/          # External expert consultations (requests + responses)
     ├── inbox/             # Untriaged feature requests from external teams/agents
     ├── plans/             # Implementation plans and task tracking
-    ├── runbooks/          # Operational procedures
+    ├── runbooks/          # Operational procedures (incl. wiki-lint)
+    ├── sources/           # Immutable raw sources (requirements, transcripts, research)
     └── vision/            # Product ideas, future concepts
 ```
 
 ## Deliberate conventions
 
+- **`doc/` is a living LLM Wiki, not a doc dump** — agents ingest/query/lint it so project context compounds instead of scattering. `bd` tracks discrete work items; the wiki holds the synthesized narrative.
 - **`AGENTS.md` is canonical, `CLAUDE.md` is the symlink** — aligns with the emerging cross-agent standard.
 - **Worktrees are embraced, not forbidden** — parallel multi-agent development is a first-class goal.
 - **Semantic `bd` IDs** (`<prefix>-<epic>[-<task>]`) are preferred over auto-generated hashes.

@@ -37,6 +37,7 @@ Rough architecture, user flow, or mechanism.
 
 ## Related
 
+- Wiki hub: [Overview](../overview.md) · [Index](../index.md) · [Goals](../goals.md)
 - [Implementation Plans](../plans/README.md)
 - [Inbox — Incoming Requests](../inbox/README.md)
 - [Architecture Decisions](../decisions/README.md)

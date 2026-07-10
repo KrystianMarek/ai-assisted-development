@@ -20,6 +20,19 @@ Descriptive kebab-case filenames (e.g., `test-strategy.md`, `dependency-upgrade-
 |----------|-------------|
 | [adopting-with-script.md](adopting-with-script.md) | Guide to using `adopt.sh` for template bootstrap automation |
 
+## Bugs & Post-Mortems
+
+**Detected bugs are tracked in `bd`, not here.** File each bug as a `bd` issue
+(`bd create "..." --type bug`) so it gets dependencies, claims, and status. This
+directory is the home for the *narrative* — a post-mortem written after a
+significant bug is resolved.
+
+- Naming: `YYYY-MM-DD-postmortem-<slug>.md`.
+- Cross-link both ways: reference the `bd` ticket ID(s) in the post-mortem, and
+  point the ticket back with `--external-ref` or the doc path.
+- Suggested sections: Summary · Impact · Timeline · Root cause · Fix ·
+  Prevention / follow-up tickets.
+
 ## Adding Documentation
 
 Place developer-centric documents here:
@@ -27,10 +40,11 @@ Place developer-centric documents here:
 - Setup and configuration guides
 - Development workflow documentation
 - Debugging guides and troubleshooting
-- Investigation logs and post-mortems
+- Investigation logs and post-mortems (see above)
 
 ## Related
 
+- Wiki hub: [Overview](../overview.md) · [Index](../index.md) · [Status](../status.md)
 - [System Architecture](../architecture/README.md)
 - [Architecture Decisions](../decisions/README.md)
 - [Implementation Plans](../plans/README.md)
