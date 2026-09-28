@@ -11,7 +11,8 @@ from the lint pass in Andrej Karpathy's
 
 - Before landing a large batch of changes (session completion).
 - After ingesting several sources.
-- On a regular cadence as the wiki grows.
+- On a regular cadence as the wiki grows — together with
+  [repo-hygiene](repo-hygiene.md), which covers the repository side.
 
 ## Prerequisites
 
@@ -21,12 +22,12 @@ from the lint pass in Andrej Karpathy's
 
 ### 1. Freshness
 
-Confirm [status.md](../status.md) reflects reality and [log.md](../log.md) has an
-entry for recent work. Flag `status.md` if its "Last updated" date lags the newest
-`log.md` entry.
+Confirm [status.md](../status.md) reflects reality and the monthly log (see
+[log.md](../log.md)) has an entry for recent work. Flag `status.md` if its
+"Last updated" date lags the newest log entry.
 
 ```shell
-grep "^## \[" ../doc/log.md | head -5
+cat doc/log/*.md | grep '^- ' | tail -5
 ```
 
 ### 2. Contradictions & stale claims
@@ -56,10 +57,27 @@ page. List them; do not auto-create — flag for the next ingest or the user.
 
 ### 5. Index & log integrity
 
-Confirm every page appears in [index.md](../index.md) and that `log.md` entries
-use the `## [YYYY-MM-DD] <type> | <title>` prefix.
+Confirm every page appears in [index.md](../index.md), that `doc/log.md` lists
+every month file under `doc/log/`, and that log entries are well-formed single
+lines (the pre-commit hooks enforce the format; this catches `--no-verify`
+commits):
 
-### 6. Ticket ↔ wiki consistency
+```shell
+pre-commit run wiki-log-format --all-files
+pre-commit run wiki-log-no-entries-in-index --all-files
+for f in doc/log/[0-9]*.md; do
+  grep -q "$(basename "$f")" doc/log.md || echo "UNLISTED: $f"
+done
+```
+
+### 6. Reference clones
+
+Every directory in `external/` has a row in
+[external/README.md](../../external/README.md) with origin, ref, and an
+analysis page in [sources/](../sources/README.md); every row's analysis page
+exists. `scripts/repo-hygiene.sh` reports unindexed clones.
+
+### 7. Ticket ↔ wiki consistency
 
 Cross-check `bd` against the wiki: closed epics reflected in `status.md`, open
 work surfaced, no plan in `doc/plans/` left `Active` for closed tickets.
@@ -71,24 +89,31 @@ bd status
 
 ## Verification
 
-Produce a short report and **append it to [log.md](../log.md)** as a `lint` entry:
+Record the findings in a `bd` chore for the sweep (its description or close
+reason holds the report below), then **append one line** to the current
+month's log (see [log.md](../log.md)):
+
+```text
+- YYYY-MM-DD lint | wiki health check: 🟢/🟡/🔴, <n> fixed, <m> filed → <bd-id>
+```
+
+Report template for the `bd` chore:
 
 ```markdown
-## [YYYY-MM-DD] lint | Wiki health check
-
 Overall: 🟢 Green | 🟡 Yellow | 🔴 Red
 - Freshness: ...
 - Contradictions: ...
 - Orphans: ...
 - Coverage gaps: ...
 - Index/log integrity: ...
+- Reference clones: ...
 - Ticket/wiki consistency: ...
 Next steps: <numbered; note which need user approval>
 ```
 
 ## Rollback
 
-Lint is read-and-report by default; the only writes are the log entry and any
+Lint is read-and-report by default; the only writes are the log line and any
 frontmatter/link fixes you explicitly make. Revert via git if needed.
 
 ## Hard Rules
@@ -101,3 +126,4 @@ frontmatter/link fixes you explicitly make. Revert via git if needed.
 
 - [AGENTS.md → Project as an LLM Wiki](../../AGENTS.md#project-as-an-llm-wiki)
 - [index.md](../index.md) · [log.md](../log.md) · [status.md](../status.md)
+- [repo-hygiene.md](repo-hygiene.md) — repository-side health check

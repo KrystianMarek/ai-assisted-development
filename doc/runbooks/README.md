@@ -13,6 +13,7 @@ These are living documents — update them when configuration changes.
 | Runbook | Description |
 |---------|-------------|
 | [wiki-lint.md](wiki-lint.md) | Health-check the `doc/` LLM Wiki: freshness, contradictions, orphans, coverage, ticket↔wiki consistency |
+| [repo-hygiene.md](repo-hygiene.md) | Find and clean agent cruft: stray worktrees, merged branches, stashes, dead `.gitignore` entries, stale `bd` claims, `external/` drift |
 
 ## Runbook Template
 

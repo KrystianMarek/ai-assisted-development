@@ -1,0 +1,4 @@
+# Reference clones are never committed — only this file and README.md are.
+*
+!.gitignore
+!README.md
