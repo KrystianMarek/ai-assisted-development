@@ -120,6 +120,16 @@ no local `.beads/` exists yet). Epic `tmpl-hygiene`.
       `.worktrees/` in `.gitignore`, runbook, `scripts/repo-hygiene.sh`;
       verify how `bd worktree create .worktrees/<name>` touches `.gitignore`.
 - [ ] `tmpl-hygiene-smoke` — smoke-test coverage (below).
+- [ ] `tmpl-hygiene-upgrade` — upgrade path for **existing** adopters.
+      `adopt.sh` ships every tracked, non-excluded file via `git archive HEAD`,
+      so new files (runbook, script, `external/`, `.gitattributes`, month file)
+      reach a re-run target automatically. But files the target already has —
+      `AGENTS.md`, `.gitignore`, `.pre-commit-config.yaml`,
+      `doc/runbooks/README.md`, `doc/runbooks/wiki-lint.md` — are skipped, and
+      `--force` overwrites *all* of them, wiping project-specific `AGENTS.md`
+      content. Add a report of template files that differ from the target
+      (e.g. `adopt.sh --diff`), plus a per-file merge checklist in the
+      migration note, so adopters pull the rule changes without clobbering.
 - [ ] `tmpl-hygiene-docs` — README, `doc/development/adopting-with-script.md`,
       runbooks/plans indexes, migration note for existing adopters (freeze old
       `log.md` as `doc/log/archive-pre-YYYY-MM.md`, start month files).
@@ -131,7 +141,12 @@ no local `.beads/` exists yet). Epic `tmpl-hygiene`.
 - Smoke test: a multi-line / over-cap / malformed entry → pre-commit hook fails.
 - Smoke test: adopted target gets `external/.gitignore`, `external/readme.md`,
   `.gitattributes`, `doc/log.md` (entry point), a month file, the hygiene
-  runbook and script; template's own log entries NOT leaked.
+  runbook (listed in the target's `doc/runbooks/README.md`) and script;
+  template's own log entries NOT leaked.
+- Smoke test: re-running `adopt.sh` on a target adopted *before* this change
+  adds the new files without touching its `AGENTS.md`, and the diff report
+  lists `AGENTS.md`, `.gitignore`, `.pre-commit-config.yaml`,
+  `doc/runbooks/README.md`, and `doc/runbooks/wiki-lint.md` as differing.
 - `scripts/repo-hygiene.sh` exits 0 on a clean adopted repo and non-zero after
   planting a stray dir, a stash, and a dead `.gitignore` path.
 - `pre-commit run --all-files` green.
