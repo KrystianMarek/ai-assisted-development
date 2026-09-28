@@ -4,12 +4,14 @@ A **project template** for starting new repositories that will be built collabor
 
 ## What you get
 
-- **A development-focused LLM Wiki.** The `doc/` tree is maintained as a persistent, compounding, interlinked knowledge base ([Karpathy's LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)) rather than write-once files. Agents *ingest* new information into it, *query* it with citations, and *lint* it for rot. Root files `doc/overview.md` (high-level idea), `doc/index.md` (master catalog), `doc/log.md` (chronological log), `doc/goals.md` (long/short-horizon goals), and `doc/status.md` (progress) sit above the topical subdirs. See [AGENTS.md → Project as an LLM Wiki](./AGENTS.md#project-as-an-llm-wiki).
+- **A development-focused LLM Wiki.** The `doc/` tree is maintained as a persistent, compounding, interlinked knowledge base ([Karpathy's LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)) rather than write-once files. Agents *ingest* new information into it, *query* it with citations, and *lint* it for rot. Root files `doc/overview.md` (high-level idea), `doc/index.md` (master catalog), `doc/log.md` + `doc/log/YYYY-MM.md` (one-line chronological log that parallel agents append to without merge conflicts), `doc/goals.md` (long/short-horizon goals), and `doc/status.md` (progress) sit above the topical subdirs. See [AGENTS.md → Project as an LLM Wiki](./AGENTS.md#project-as-an-llm-wiki).
 - **`doc/` tree** with canonical subdirectories, each seeded with a `README.md` that explains its purpose, naming rules, template for new entries, and an index of its contents. Includes `sources/` (immutable raw source-of-truth layer) and `considerations/` (open trade-offs and risks).
 - **`AGENTS.md`** — the single source of truth for agent behaviour, covering documentation placement, `bd` (beads) issue tracking with semantic IDs, multi-agent worktree workflow, and the eight-step *Landing the Plane* session-completion protocol. `CLAUDE.md` is a symlink to it so Claude Code reads the same instructions as every other agent.
 - **`bd` issue-tracking ready-to-provision** — dependency-aware, AI-native ticket tracker with git-native merge semantics via [Dolt](https://docs.dolthub.com/). The template does not ship a pre-initialised `.beads/` database (that directory is per-project and contains your own sync-remote URL); the `AGENTS.md` initialization checklist walks you through Dolt installation, `bd init` / `bd bootstrap`, hook ordering, and `bd doctor`. `.claude/settings.json` pre-wires `bd prime` as a `SessionStart`/`PreCompact` hook so workflow context auto-injects once bd is initialised.
 - **Pre-commit quality gates** (`.pre-commit-config.yaml` + `.markdownlint.yaml`) — language-agnostic defaults (whitespace, EOF, merge-conflict, YAML, markdown) that enforce the *"work is not complete until `git push` succeeds"* rule before a commit can land.
-- **Multi-agent-friendly workflow** — embraces `bd worktree create` so several agents can work in parallel on independent tickets without stomping on each other's working tree.
+- **Multi-agent-friendly workflow** — embraces `bd worktree create` so several agents can work in parallel on independent tickets without stomping on each other's working tree. All worktrees live under one ignored `.worktrees/` root.
+- **`external/` for reference clones** — read-only clones of similar projects or ones you integrate with, indexed in `external/README.md` (origin, ref, analysis page) and never committed.
+- **Repo hygiene as a duty, not an afterthought** — `scripts/repo-hygiene.sh` (read-only) and [`doc/runbooks/repo-hygiene.md`](./doc/runbooks/repo-hygiene.md) catch stray worktrees, merged branches, stashes, dead `.gitignore` lines, and `external/` drift; the quick check is part of session completion.
 
 ## Adopting this template
 
@@ -48,14 +50,15 @@ Flags:
 | `--role ROLE` | Sets `git config beads.role` (default: `maintainer`). |
 | `--dry-run` | Print the commands that would run; make no changes. Always preview first. |
 | `--force` | Resync template-owned files (overwrite existing ones). `README.md` and the wiki core pages (`overview.md`, `goals.md`, `status.md`, `log.md`) are **never** overwritten — placeholders are only written when the target lacks them. |
+| `--diff` | Read-only upgrade report for an **already-adopted** target: lists template files that are new (a re-run adds them) and files that differ (merge by hand). Needs only `git`. |
 | `--help` | Show usage. |
 
 Prerequisites the script checks for upfront: `git`, `pre-commit`, `dolt`, `bd`. It will list any missing tool with an install hint and exit before touching the target.
 
 What `adopt.sh` does:
 
-- Copies the template skeleton (`AGENTS.md`, `CLAUDE.md` symlink, `.pre-commit-config.yaml`, `.markdownlint.yaml`, `.claude/settings.json`, `.gitignore`, `LICENSE`, the per-directory `doc/**/README.md` index files, the wiki catalog `doc/index.md`, and the reusable `doc/runbooks/wiki-lint.md`). It **auto-detects the `tar` capability** (probes the GNU-only flags; falls back to a portable path on BSD/libarchive/busybox) so it works natively on macOS, Linux, and Alpine.
-- Writes a placeholder `README.md` if the target has none, and placeholder **wiki core pages** (`doc/overview.md`, `doc/goals.md`, `doc/status.md`, `doc/log.md`) if the target lacks them — never overwriting pages you have filled in.
+- Copies the template skeleton (`AGENTS.md`, `CLAUDE.md` symlink, `.pre-commit-config.yaml`, `.markdownlint.yaml`, `.claude/settings.json`, `.gitignore`, `LICENSE`, the per-directory `doc/**/README.md` index files, the wiki catalog `doc/index.md`, the reusable runbooks `wiki-lint.md` and `repo-hygiene.md`, `scripts/repo-hygiene.sh`, `.gitattributes`, and the `external/` scaffold). It **auto-detects the `tar` capability** (probes the GNU-only flags; falls back to a portable path on BSD/libarchive/busybox) so it works natively on macOS, Linux, and Alpine.
+- Writes a placeholder `README.md` if the target has none, and placeholder **wiki core pages** (`doc/overview.md`, `doc/goals.md`, `doc/status.md`, `doc/log.md` plus the first `doc/log/YYYY-MM.md`) if the target lacks them — never overwriting pages you have filled in.
 - Runs `pre-commit install`, `bd init`, and merges the BEADS pre-commit hook block above the framework `exec` so both run.
 - Sets `git config beads.role` and unsets `core.hooksPath` so the merged hook fires.
 
@@ -80,6 +83,7 @@ Skip `adopt.sh` entirely and walk the **Project Initialization Checklist** at th
 - `adopt.sh` refuses to overwrite an existing `AGENTS.md` without `--force`. If the repo already has a substantial `CLAUDE.md`, merge its project-specific content into `AGENTS.md` **before** replacing `CLAUDE.md` with the symlink.
 - If the repo already has Dolt refs in its git remote, use `bd bootstrap` (not `bd init`) and **restart the Dolt server** afterwards: `bd dolt stop && bd dolt start`.
 - The first `pre-commit run --all-files` will flag pre-existing lint violations — fix them in a dedicated cleanup commit, or use `git commit --no-verify` for the adoption commit and clean up in a follow-up.
+- **Upgrading an adoption made from an older template:** run `adopt.sh --target <repo> --diff` first. A plain re-run adds the new files but skips every file you already have (including `AGENTS.md`), and `--force` would overwrite them all — so merge the reported differences by hand using the checklist in [`doc/development/adopting-with-script.md`](./doc/development/adopting-with-script.md#upgrading-an-existing-adoption).
 - Existing `doc/` READMEs with richer content than the template scaffolds are preserved by default (existing files are skipped on both the GNU and BSD copy paths); pass `--force` only when you want to resync from upstream. `README.md` and the wiki core pages (`overview.md`, `goals.md`, `status.md`, `log.md`) are **never** overwritten, even with `--force`.
 
 ## Layout at a glance
@@ -91,12 +95,17 @@ Skip `adopt.sh` entirely and walk the **Project Initialization Checklist** at th
 ├── .pre-commit-config.yaml
 ├── .markdownlint.yaml
 ├── .claude/settings.json  # SessionStart/PreCompact hooks running `bd prime`
-├── .gitignore             # Excludes .beads/, .remember/, local Claude settings, Dolt blobs
+├── .gitignore             # Excludes .beads/, .worktrees/, .remember/, local Claude settings, Dolt blobs
+├── .gitattributes         # union merge for the monthly log files
+├── scripts/repo-hygiene.sh # Read-only repo sanity report
+├── external/              # Reference clones (ignored) + README.md index
 # .beads/                  # NOT in template — created locally by `bd init` during bootstrap
+# .worktrees/              # NOT in template — every agent worktree lives here (ignored)
 └── doc/
     ├── overview.md        # Synthesis front page: the high-level idea
     ├── index.md           # Master catalog of every wiki page
-    ├── log.md             # Append-only chronological log
+    ├── log.md             # Log entry page: format + list of months (no entries)
+    ├── log/               # YYYY-MM.md — one-line entries, appended, union-merged
     ├── goals.md           # Long-horizon + short-horizon goals
     ├── status.md          # Current progress snapshot (cross-linked to bd)
     ├── architecture/      # System design and component diagrams
@@ -107,7 +116,7 @@ Skip `adopt.sh` entirely and walk the **Project Initialization Checklist** at th
     ├── guidance/          # External expert consultations (requests + responses)
     ├── inbox/             # Untriaged feature requests from external teams/agents
     ├── plans/             # Implementation plans and task tracking
-    ├── runbooks/          # Operational procedures (incl. wiki-lint)
+    ├── runbooks/          # Operational procedures (incl. wiki-lint, repo-hygiene)
     ├── sources/           # Immutable raw sources (requirements, transcripts, research)
     └── vision/            # Product ideas, future concepts
 ```

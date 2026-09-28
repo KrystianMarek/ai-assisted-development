@@ -1,6 +1,6 @@
 # Plan: Conflict-free log, `external/` scaffold, repo hygiene
 
-Status: Planning
+Status: Complete
 
 ## Objective
 

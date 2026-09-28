@@ -13,7 +13,7 @@ Status: ✅ live · 🚧 stub / planned
 | [overview.md](overview.md) | High-level idea: what this project is, who uses it, headline tech | ✅ |
 | [goals.md](goals.md) | Long-horizon (north star) and short-horizon (current cycle) goals | ✅ |
 | [status.md](status.md) | Current progress snapshot, cross-linked to `bd` | ✅ |
-| [log.md](log.md) | Append-only chronological log of ingests / decisions / progress / lint | ✅ |
+| [log.md](log.md) | Log entry page: one-line entry format + list of monthly files in `log/` | ✅ |
 | [index.md](index.md) | This catalog | ✅ |
 
 ## Raw sources (immutable)
@@ -23,6 +23,7 @@ Status: ✅ live · 🚧 stub / planned
 | [sources/](sources/README.md) | Requirements, transcripts, external references, research notes |
 | [guidance/](guidance/README.md) | External expert consultations (requests + responses) |
 | [inbox/](inbox/README.md) | Untriaged incoming feature requests |
+| [../external/](../external/README.md) | Read-only reference clones of other repos (index only; analyses live in `sources/`) |
 
 ## Knowledge & decisions
 
@@ -38,7 +39,7 @@ Status: ✅ live · 🚧 stub / planned
 | Area | Summary |
 |---|---|
 | [plans/](plans/README.md) | Implementation plans and task tracking |
-| [runbooks/](runbooks/README.md) | Operational procedures (incl. [wiki-lint](runbooks/wiki-lint.md)) |
+| [runbooks/](runbooks/README.md) | Operational procedures (incl. [wiki-lint](runbooks/wiki-lint.md), [repo-hygiene](runbooks/repo-hygiene.md)) |
 | [development/](development/README.md) | Developer guides, setup, post-mortems |
 | [benchmarks/](benchmarks/README.md) | E2E verification scenarios and benchmark runs |
 
