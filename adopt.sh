@@ -8,10 +8,11 @@ TARGET="${PWD}"
 ROLE="maintainer"
 DRY_RUN=0
 FORCE=0
+DIFF=0
 
 usage() {
   cat <<'EOF'
-Usage: adopt.sh [--target DIR] [--role ROLE] [--dry-run] [--force] [--help]
+Usage: adopt.sh [--target DIR] [--role ROLE] [--dry-run] [--force] [--diff] [--help]
 
   --target DIR   Repo to adopt the template into (default: $PWD).
   --role ROLE    Value for `git config beads.role` (default: maintainer).
@@ -20,6 +21,9 @@ Usage: adopt.sh [--target DIR] [--role ROLE] [--dry-run] [--force] [--help]
                  README.md and the wiki core pages (overview.md, goals.md,
                  status.md, log.md) are NEVER overwritten — placeholders are
                  only written when the target lacks them.
+  --diff         Read-only upgrade report for an already-adopted TARGET: list
+                 template files that are new (a re-run adds them) or differ
+                 (merge by hand). Needs only git; changes nothing.
   --help         Show this message.
 EOF
 }
@@ -32,6 +36,7 @@ while [[ $# -gt 0 ]]; do
                ROLE="$2"; shift 2 ;;
     --dry-run) DRY_RUN=1;    shift ;;
     --force)   FORCE=1;      shift ;;
+    --diff)    DIFF=1;       shift ;;
     --help|-h) usage; exit 0 ;;
     *) echo "unknown flag: $1" >&2; usage; exit 2 ;;
   esac
@@ -107,11 +112,13 @@ TEMPLATE_EXCLUDE_PATHS=(
   doc/plans/2026-04-17-adopt-script.md
   doc/plans/2026-04-20-adopt-sh-feedback.md
   doc/plans/2026-07-10-llm-wiki-migration.md
+  doc/plans/2026-09-28-log-external-hygiene.md
   doc/inbox/2026-04-20-blog-project-adopt-sh-feedback.md
   doc/overview.md
   doc/goals.md
   doc/status.md
   doc/log.md
+  doc/log
   test
 )
 
@@ -349,29 +356,151 @@ _Last updated: TODO_
 - [goals.md](goals.md) · [log.md](log.md) · [index.md](index.md)
 EOF
         ;;
-      log.md) cat > "$path" <<'EOF'
-# Wiki Log
-
-Append-only chronological record of wiki activity. **Newest entries at the top.**
-
-Each entry starts with a consistent prefix so the log is greppable:
-
-```
-## [YYYY-MM-DD] <type> | <title>
-```
-
-Types: `ingest`, `decision`, `progress`, `lint`.
-Timeline: `grep "^## \[" doc/log.md | head`.
-
----
-
-## [YYYY-MM-DD] progress | Project bootstrapped from ai-assisted-development template
-
-TODO: replace with the first real log entry.
-EOF
-        ;;
+      log.md) write_log_placeholders "$path" ;;
     esac
   done
+}
+
+write_log_placeholders() {
+  # Fresh log entry page + the first monthly file. Only called when the target
+  # has no doc/log.md; a target with a legacy log is left for the owner to
+  # migrate (see report_legacy_log).
+  local path="$1" month today monthly
+  month="$(date +%Y-%m)"
+  today="$(date +%Y-%m-%d)"
+  cat > "$path" <<'EOF'
+# Wiki Log
+
+Chronological record of wiki and project activity. This page holds **no
+entries** — it explains the format and lists the monthly files. Entries live in
+`doc/log/YYYY-MM.md`, one file per month.
+
+## Format
+
+One line per event, **appended at the bottom** of the current month's file
+(create the file if the month is new, starting with `# Log: YYYY-MM`):
+
+```text
+- YYYY-MM-DD <type> | <what happened> → <bd-id or page link>
+```
+
+- **Types:** `ingest`, `decision`, `progress`, `lint`.
+- **One line, at most 240 characters.** The log is an index, not a narrative:
+  the detail lives where the pointer goes.
+
+  | Type | Detail lives in |
+  |---|---|
+  | `progress` | the `bd` issue — close reason, `bd note`, `--external-ref` for the MR/PR |
+  | `decision` | an ADR in [decisions/](decisions/README.md), or a `bd` issue of type `decision` |
+  | `ingest` | the dated page in [sources/](sources/README.md) (+ its README index row) |
+  | `lint` | a `bd` chore for the sweep; findings in its close reason |
+
+## Why this shape
+
+Parallel agents each append to the log from their own worktree. A single
+growing file edited at the same spot conflicts on nearly every merge. Monthly
+files use git's `union` merge driver (see `.gitattributes`), which keeps both
+sides' appended lines — safe **only** because each entry is a single line. The
+`wiki-log-format` pre-commit hook rejects multi-line, over-long, or malformed
+entries; `wiki-log-no-entries-in-index` rejects entries written here.
+
+## Timeline
+
+```shell
+cat doc/log/*.md | grep '^- ' | tail -20      # recent activity
+grep -h ' decision | ' doc/log/*.md           # all decisions
+```
+
+## Months
+
+EOF
+  printf -- '- [%s](log/%s.md)\n' "$month" "$month" >> "$path"
+  cat >> "$path" <<'EOF'
+
+## Related
+
+- [index.md](index.md) — page catalog · [status.md](status.md) — current state
+- [AGENTS.md → Project as an LLM Wiki](../AGENTS.md#project-as-an-llm-wiki)
+EOF
+  monthly="$(dirname "$path")/log/$month.md"
+  mkdir -p "$(dirname "$monthly")"
+  if [[ ! -f "$monthly" ]]; then
+    printf '# Log: %s\n\n- %s progress | Project bootstrapped from the ai-assisted-development template → [AGENTS.md](../../AGENTS.md)\n' \
+      "$month" "$today" > "$monthly"
+  fi
+}
+
+has_legacy_log() {
+  # Pre-2026-09 template: entries written as "## [YYYY-MM-DD] type | title"
+  # blocks directly in doc/log.md.
+  [[ -f "$TARGET/doc/log.md" ]] \
+    && grep -qE '^## \[[0-9]{4}-[0-9]{2}-[0-9]{2}\]' "$TARGET/doc/log.md"
+}
+
+report_legacy_log() {
+  has_legacy_log || return 0
+  cat <<EOF
+
+NOTE: $TARGET/doc/log.md uses the legacy multi-line log format (entries in
+doc/log.md itself). The template now uses one-line entries in monthly files,
+which parallel agents can append without merge conflicts. Migrate by hand:
+see "Upgrading an existing adoption" in
+$SCRIPT_DIR/doc/development/adopting-with-script.md
+EOF
+}
+
+is_excluded() {
+  local f="$1" p
+  for p in "${TEMPLATE_EXCLUDE_PATHS[@]}"; do
+    [[ "$f" == "$p" || "$f" == "$p/"* ]] && return 0
+  done
+  return 1
+}
+
+diff_report() {
+  # Read-only upgrade report: compare every template-shipped file (template
+  # HEAD minus TEMPLATE_EXCLUDE_PATHS) with the target by blob hash. Symlinks
+  # compare their link text. Nothing is written.
+  local meta mode type sha f target new=0 differs=0 same=0
+  local -a new_files=() differ_files=()
+  while IFS=$'\t' read -r meta f; do
+    read -r mode type sha <<<"$meta"
+    [[ "$type" == blob ]] || continue
+    is_excluded "$f" && continue
+    target="$TARGET/$f"
+    if [[ ! -e "$target" && ! -L "$target" ]]; then
+      new_files+=("$f"); new=$((new + 1))
+    elif [[ "$mode" == 120000 ]]; then
+      if [[ -L "$target" && "$(readlink "$target")" == "$(git -C "$SCRIPT_DIR" cat-file blob "$sha")" ]]; then
+        same=$((same + 1))
+      else
+        differ_files+=("$f"); differs=$((differs + 1))
+      fi
+    elif [[ -L "$target" || -d "$target" ]]; then
+      differ_files+=("$f"); differs=$((differs + 1))
+    elif [[ "$(git hash-object "$target")" == "$sha" ]]; then
+      same=$((same + 1))
+    else
+      differ_files+=("$f"); differs=$((differs + 1))
+    fi
+  done < <(git -C "$SCRIPT_DIR" ls-tree -r HEAD)
+
+  printf 'Template %s vs %s\n\n' "$(git -C "$SCRIPT_DIR" rev-parse --short HEAD)" "$TARGET"
+  if (( new )); then
+    echo "New in the template (a plain re-run of adopt.sh adds these):"
+    printf '  new      %s\n' "${new_files[@]}"
+    echo
+  fi
+  if (( differs )); then
+    echo "Differ from the template (a re-run SKIPS these; --force would overwrite"
+    echo "them all, including your AGENTS.md — merge by hand instead):"
+    printf '  differs  %s\n' "${differ_files[@]}"
+    echo
+  fi
+  printf '%d new, %d differ, %d identical.\n' "$new" "$differs" "$same"
+  echo "Merge checklist: \"Upgrading an existing adoption\" in"
+  echo "  $SCRIPT_DIR/doc/development/adopting-with-script.md"
+  report_legacy_log
 }
 
 install_precommit() {
@@ -448,6 +577,7 @@ Adoption complete. Manual follow-ups:
 
 Run ./adopt.sh --help to see all flags.
 EOF
+  report_legacy_log
 }
 
 bd_init() {
@@ -504,6 +634,11 @@ EOF
 }
 
 main() {
+  if [[ "$DIFF" == 1 ]]; then
+    validate_target
+    diff_report
+    return 0
+  fi
   require_prereqs
   validate_target
   check_git_writable
