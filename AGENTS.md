@@ -164,7 +164,8 @@ All project documentation lives under `doc/`. Each subdirectory has a `README.md
 doc/
 ├── overview.md      # Synthesis front page: the high-level idea (wiki entry point)
 ├── index.md         # Master catalog of every wiki page, one line each
-├── log.md           # Append-only chronological log of ingests/decisions/lint
+├── log.md           # Log entry point: format + list of monthly files (no entries)
+├── log/             # YYYY-MM.md — one-line log entries, appended, union-merged
 ├── goals.md         # Long-horizon + short-horizon goals
 ├── status.md        # Current progress snapshot (cross-linked to bd)
 ├── architecture/    # System design and component diagrams
@@ -180,6 +181,10 @@ doc/
 └── vision/          # Product ideas, future concepts
 ```
 
+Outside `doc/`, `external/` holds read-only reference clones of other
+repositories (see [Reference Clones](#reference-clones-external)); its only
+tracked files are `external/README.md` (the clone index) and `external/.gitignore`.
+
 ### Placement Rules
 
 | Content Type | Directory | Naming |
@@ -187,6 +192,7 @@ doc/
 | High-level idea / synthesis | `doc/overview.md` | fixed file |
 | Long / short horizon goals | `doc/goals.md` | fixed file |
 | Current progress snapshot | `doc/status.md` | fixed file |
+| Log entries (one line each) | `doc/log/` | `YYYY-MM.md` |
 | Open trade-offs, risks, considerations | `doc/considerations/` | `<topic>.md` |
 | Immutable raw sources | `doc/sources/` | `YYYY-MM-DD-<source>-<topic>.md` or `<ref>.md` |
 | System design, component diagrams | `doc/architecture/` | `<component>.md` |
@@ -198,6 +204,8 @@ doc/
 | Operational runbooks | `doc/runbooks/` | `<procedure-name>.md` |
 | Benchmarks, E2E verification | `doc/benchmarks/` | `<component>-<test-type>.md` or `YYYY-MM-DD-<description>.md` |
 | Product vision | `doc/vision/` | `<concept-name>.md` |
+| Reference clone of another repo | `external/` (index row in `external/README.md`) | `<repo-name>/` |
+| Analysis of a reference clone | `doc/sources/` | `YYYY-MM-DD-<repo>-analysis.md` |
 
 ### When Creating Documentation
 
@@ -205,7 +213,7 @@ doc/
 2. Add an entry to that directory's index table in its `README.md`.
 3. Use Markdown with tables for structured information.
 4. Link to related documents across directories.
-5. **Never create docs outside `doc/`** — keep the tree clean.
+5. **Never create docs outside `doc/`** — keep the tree clean. The one exception is `external/README.md`, the reference-clone index.
 
 ### Hard Rules
 
@@ -226,14 +234,15 @@ This repository's `doc/` tree is maintained as a **development-focused LLM Wiki*
 
 ### Three operations
 
-- **Ingest.** When new information arrives (a requirement, a decision, research, a meeting note, a completed feature): read it, file the raw material under `doc/sources/` (or `inbox`/`guidance`) if it is a durable source, then integrate it — update `doc/overview.md` if the big picture shifted, update the relevant topical page(s), add/adjust cross-links, register any new page in `doc/index.md`, and append a `doc/log.md` entry. A single ingest may touch several pages.
+- **Ingest.** When new information arrives (a requirement, a decision, research, a meeting note, a completed feature): read it, file the raw material under `doc/sources/` (or `inbox`/`guidance`) if it is a durable source, then integrate it — update `doc/overview.md` if the big picture shifted, update the relevant topical page(s), add/adjust cross-links, register any new page in `doc/index.md`, and append a one-line entry to `doc/log/YYYY-MM.md`. A single ingest may touch several pages.
 - **Query.** When answering "what is the state of X / why did we decide Y": read `doc/index.md` first to find relevant pages, drill into them, and answer **with citations** (link the pages). File durable answers back into the wiki as new pages so explorations compound instead of vanishing into chat history.
-- **Lint.** Periodically run the wiki health-check (see `doc/runbooks/wiki-lint.md`): flag contradictions, stale `status.md`/claims, orphan pages (no inbound links), missing cross-references, and coverage gaps. Append the lint result to `doc/log.md`.
+- **Lint.** Periodically run the wiki health-check (see `doc/runbooks/wiki-lint.md`): flag contradictions, stale `status.md`/claims, orphan pages (no inbound links), missing cross-references, and coverage gaps. Record the report in a `bd` chore and append a one-line `lint` entry to the monthly log.
 
 ### index.md and log.md
 
 - **`doc/index.md`** is content-oriented: a catalog of every wiki page with a one-line summary, organized by category. Update it on every ingest. Agents read it *first* when answering queries.
-- **`doc/log.md`** is chronological and append-only. Each entry starts with a consistent prefix — `## [YYYY-MM-DD] <type> | <title>` (types: `ingest`, `decision`, `progress`, `lint`) — so `grep "^## \[" doc/log.md | tail -5` yields a timeline.
+- **The log** is chronological, append-only, and **one line per entry**: `- YYYY-MM-DD <type> | <what happened> → <bd-id or page link>` (types: `ingest`, `decision`, `progress`, `lint`; at most 240 characters). Entries are appended at the bottom of `doc/log/YYYY-MM.md` (start a new file each month and list it in `doc/log.md`, which holds the format and no entries). `cat doc/log/*.md | grep '^- ' | tail -5` yields a timeline.
+- **The log is an index, not a narrative.** Detail lives where the pointer goes: progress in the `bd` issue (close reason, `bd note`), decisions in an ADR or a `bd` issue of type `decision`, ingests in the `doc/sources/` page, lint findings in a `bd` chore. This keeps the log small and — because monthly files use git's `union` merge driver (`.gitattributes`) — lets parallel agents append without merge conflicts. That only works for single-line entries; the `wiki-log-format` pre-commit hook enforces it.
 
 ### Cross-linking discipline
 
@@ -263,7 +272,7 @@ bd ready --plain                   # Plain numbered list instead of tree
 bd ready --explain                 # Show why each issue is ready or blocked
 
 # Worktrees (see "Multi-Agent Development" below)
-bd worktree create <branch-name>   # creates ./<branch-name>, auto-gitignored
+bd worktree create .worktrees/<name> --branch <name>   # ALWAYS under .worktrees/
 bd worktree list
 bd worktree info                   # info about the current worktree
 
@@ -362,18 +371,17 @@ This project **embraces git worktrees** to enable parallel agent work on indepen
 ### Workflow
 
 1. **Claim the ticket first** — `bd update <id> --claim` is atomic and prevents two agents grabbing the same issue.
-2. **Create a worktree for the epic:**
+2. **Create a worktree for the epic — always under `.worktrees/`:**
    ```bash
-   bd worktree create <branch-name>
-   # or:  bd worktree create <branch-name> --branch <different-branch>
+   bd worktree create .worktrees/<name> --branch <name>
    ```
-   This provisions an isolated checkout at `./<branch-name>/` on a new branch. bd auto-appends the path to `.gitignore` if it lands inside the repo root. The worktree automatically shares the same beads database as the main repo.
-3. **Work inside the worktree** — `cd <branch-name>` and proceed normally (tests, commits, pushes all scope to the worktree's branch).
+   This provisions an isolated checkout at `./.worktrees/<name>/` on a new branch. `.worktrees/` is ignored once in the template `.gitignore`, so bd adds nothing to `.gitignore`. (With a root-level name, `bd worktree create <name>` appends `<name>/` to `.gitignore` — that is how one-off ignore entries pile up; don't.) The worktree automatically shares the same beads database as the main repo.
+3. **Work inside the worktree** — `cd .worktrees/<name>` and proceed normally (tests, commits, pushes all scope to the worktree's branch).
 4. **Cross-link the worktree branch and the ticket** — include the ticket ID in commit messages and the MR description; label the ticket with the MR URL at session end (see Landing the Plane below).
 5. **Tear down on merge** — after the MR lands, remove the worktree (bd adds safety checks over raw `git worktree remove`):
    ```bash
-   bd worktree remove <branch-name>
-   git branch -d <branch-name>
+   bd worktree remove .worktrees/<name>
+   git branch -d <name>
    ```
 
 ### Rules
@@ -381,6 +389,7 @@ This project **embraces git worktrees** to enable parallel agent work on indepen
 - **One ticket ↔ one worktree.** Two agents MUST NOT share a worktree; claims prevent ticket collisions, worktrees prevent code collisions.
 - **Never cross-edit from the main checkout while an agent is working in a worktree** — that re-creates the collision worktrees are meant to prevent.
 - **Every worktree eventually merges or gets removed.** Stale worktrees accumulate and confuse future agents; treat abandoned worktrees as follow-up tickets, not carry-over state.
+- **Worktrees live only under `.worktrees/`.** Never at the repo root, never with their own `.gitignore` line.
 
 ## Session Completion — "Landing the Plane"
 
@@ -409,8 +418,12 @@ This project **embraces git worktrees** to enable parallel agent work on indepen
    bd comments add <id> "Handoff: <current state> / <blockers> / <next step>"
    ```
    This is the durable, discoverable form of "hand off" — a fresh agent runs `bd show <id>` and sees it.
-7. **Clean up** — remove merged worktrees (`git worktree remove ...`), clear stashes, prune remote branches.
-8. **Verify** — all changes committed AND pushed AND tickets updated with MR URL + handoff comment.
+7. **Clean up** — run the quick hygiene check and fix what it reports (see [Repository Hygiene](#repository-hygiene)):
+   ```bash
+   scripts/repo-hygiene.sh --quick   # worktrees, merged/gone branches, stashes
+   ```
+   Remove your merged worktree (`bd worktree remove .worktrees/<name>`), delete its branch, and leave no stash behind.
+8. **Verify** — all changes committed AND pushed AND tickets updated with MR URL + handoff comment, and `scripts/repo-hygiene.sh --quick` exits 0 (or its remaining findings are filed as `bd` chores).
 
 ### Critical rules
 
@@ -418,6 +431,36 @@ This project **embraces git worktrees** to enable parallel agent work on indepen
 - NEVER stop before pushing — that leaves work stranded locally.
 - NEVER say "ready to push when you are" — the agent must push.
 - If push fails, resolve the underlying problem and retry until it succeeds.
+
+## Reference Clones (`external/`)
+
+`external/` holds read-only clones of repositories this project is compared with or must integrate with. They are sources to understand, map, and possibly incorporate — as designs, patterns, or properly versioned dependencies, never as copied trees.
+
+- **Never a dependency, never committed, never edited.** `external/.gitignore` ignores everything except itself and `external/README.md`.
+- **Index every clone** in `external/README.md` — directory, origin URL, ref, date cloned, why it is here, analysis page — in the same change that adds or removes it. The table is the only manifest: a fresh checkout has an empty `external/`. Do not enumerate clones anywhere else (including this file); link to the index.
+- **Pair every clone with an analysis page** in `doc/sources/` (`YYYY-MM-DD-<repo>-analysis.md`) and log the ingest.
+- `scripts/repo-hygiene.sh` and the [wiki-lint](doc/runbooks/wiki-lint.md) pass flag unindexed clones.
+
+## Repository Hygiene
+
+Parallel agents leave residue — worktrees, branches, stashes, scratch directories, one-off `.gitignore` lines — that never breaks a build and so is never cleaned up unless it is someone's job. It is every agent's job.
+
+### Hard rules
+
+- **Worktrees only under `.worktrees/`** (see [Multi-Agent Development](#multi-agent-development-with-worktrees)).
+- **Never add one-off paths to `.gitignore`.** Scratch goes under `.worktrees/` or the system temp dir. If a tool appends an entry, remove it before committing. Genuine patterns (build outputs, tool state) are fine.
+- **Leave no stash and no merged branch behind** at session end.
+- **Found cruft you can't fix now? File a `bd` chore** — don't step around it.
+- **Never delete unmerged work, stashes, or branches without confirmation**, and never "clean up" inside `.beads/` or Dolt data directories.
+
+### Cadence
+
+| When | What |
+|---|---|
+| Every session end | `scripts/repo-hygiene.sh --quick` — Landing the Plane step 7 |
+| Weekly, and with every wiki-lint pass | `scripts/repo-hygiene.sh` (full) plus the `bd` checks in [repo-hygiene](doc/runbooks/repo-hygiene.md); log one `lint` line |
+
+The script is read-only and exits non-zero on findings; [doc/runbooks/repo-hygiene.md](doc/runbooks/repo-hygiene.md) explains each finding and its fix.
 
 ## Development Conventions
 
