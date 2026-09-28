@@ -45,8 +45,8 @@ and exits `1` if there are any.
 | Check | Finding | Fix |
 |---|---|---|
 | `worktrees` | prunable (directory gone) | `git worktree prune` |
-| `worktrees` | outside `.worktrees/` | finish or park the work, `bd worktree remove <path>`, recreate as `bd worktree create .worktrees/<name> --branch <name>` |
-| `worktrees` | branch has no commits beyond the default branch | merged or never used: `bd worktree remove .worktrees/<name>` then `git branch -d <name>` |
+| `worktrees` | outside `.worktrees/` | finish or park the work, `bd worktree remove <path> --merged-into main` (or `--force` only after confirming nothing unmerged is lost), recreate as `bd worktree create .worktrees/<name> --branch <name>` |
+| `worktrees` | branch has no commits beyond the default branch | merged or never used: `bd worktree remove .worktrees/<name> --merged-into main` then `git branch -d <name>` |
 | `branches` | no commits beyond the default branch | `git branch -d <name>` |
 | `branches` | tracks a deleted upstream | usually squash-merged: confirm the MR/PR landed, then `git branch -D <name>` (**destructive — confirm first**) |
 | `stashes` | any entry | apply it to its branch and commit, or drop it once you have confirmed it is obsolete (**destructive — confirm first**) |

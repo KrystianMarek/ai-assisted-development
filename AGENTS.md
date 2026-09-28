@@ -378,9 +378,10 @@ This project **embraces git worktrees** to enable parallel agent work on indepen
    This provisions an isolated checkout at `./.worktrees/<name>/` on a new branch. `.worktrees/` is ignored once in the template `.gitignore`, so bd adds nothing to `.gitignore`. (With a root-level name, `bd worktree create <name>` appends `<name>/` to `.gitignore` — that is how one-off ignore entries pile up; don't.) The worktree automatically shares the same beads database as the main repo.
 3. **Work inside the worktree** — `cd .worktrees/<name>` and proceed normally (tests, commits, pushes all scope to the worktree's branch).
 4. **Cross-link the worktree branch and the ticket** — include the ticket ID in commit messages and the MR description; label the ticket with the MR URL at session end (see Landing the Plane below).
-5. **Tear down on merge** — after the MR lands, remove the worktree (bd adds safety checks over raw `git worktree remove`):
+5. **Tear down on merge** — after the MR lands, remove the worktree (bd adds safety checks over raw `git worktree remove`). `--merged-into` makes bd verify the branch is contained in the default branch; without it bd needs a configured upstream and refuses on local-only branches:
    ```bash
-   bd worktree remove .worktrees/<name>
+   git pull --rebase                                    # so main contains the merged work
+   bd worktree remove .worktrees/<name> --merged-into main
    git branch -d <name>
    ```
 
@@ -422,7 +423,7 @@ This project **embraces git worktrees** to enable parallel agent work on indepen
    ```bash
    scripts/repo-hygiene.sh --quick   # worktrees, merged/gone branches, stashes
    ```
-   Remove your merged worktree (`bd worktree remove .worktrees/<name>`), delete its branch, and leave no stash behind.
+   Remove your merged worktree (`bd worktree remove .worktrees/<name> --merged-into main`), delete its branch, and leave no stash behind.
 8. **Verify** — all changes committed AND pushed AND tickets updated with MR URL + handoff comment, and `scripts/repo-hygiene.sh --quick` exits 0 (or its remaining findings are filed as `bd` chores).
 
 ### Critical rules
