@@ -12,3 +12,6 @@
 
 # Agent conversation memory (per-machine, not shared)
 .remember/
+
+# macOS Finder metadata
+.DS_Store
