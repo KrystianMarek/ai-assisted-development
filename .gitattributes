@@ -1,0 +1,6 @@
+# Monthly wiki-log files are append-only, one line per entry. The union merge
+# driver keeps both sides' appended lines instead of conflicting, so parallel
+# agents can each add an entry without a merge conflict. This is only safe
+# because entries are single lines — the `wiki-log-format` pre-commit hook
+# enforces that. See doc/log.md.
+doc/log/[0-9][0-9][0-9][0-9]-[0-9][0-9].md merge=union

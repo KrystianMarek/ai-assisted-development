@@ -25,3 +25,21 @@ repos:
     rev: v0.10.0
     hooks:
       - id: shellcheck
+
+  # Wiki log discipline (see doc/log.md). Monthly log files merge with the
+  # union driver (.gitattributes), which is only conflict-free because every
+  # entry is ONE line. These hooks keep it that way.
+  - repo: local
+    hooks:
+      - id: wiki-log-format
+        name: wiki log — one well-formed line per entry, <= 240 chars
+        language: pygrep
+        files: ^doc/log/\d{4}-\d{2}\.md$
+        # Flags any line that is over-long, or is neither the month heading,
+        # blank, nor "- YYYY-MM-DD <type> | <text>".
+        entry: '^(?:.{241,}|(?!# Log: \d{4}-\d{2}$)(?!- \d{4}-\d{2}-\d{2} (?:ingest|decision|progress|lint) \| \S.*$).+)$'
+      - id: wiki-log-no-entries-in-index
+        name: wiki log — entries go in doc/log/YYYY-MM.md, not doc/log.md
+        language: pygrep
+        files: ^doc/log\.md$
+        entry: '^(?:## \[\d{4}-\d{2}-\d{2}\]|- \d{4}-\d{2}-\d{2} )'

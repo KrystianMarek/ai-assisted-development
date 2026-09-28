@@ -6,6 +6,8 @@
 .dolt/
 *.db
 .beads-credential-key
+.beads/proxieddb/
+*.gate.lock*
 
 # Claude Code per-user local settings (permissions, etc.)
 .claude/settings.local.json
@@ -15,3 +17,8 @@
 
 # macOS Finder metadata
 .DS_Store
+
+# Agent worktrees — ALL worktrees live under this one ignored root.
+# Create with: bd worktree create .worktrees/<name> --branch <name>
+# Never add per-worktree or scratch paths to this file (see AGENTS.md → Repository Hygiene).
+.worktrees/
