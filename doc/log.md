@@ -15,6 +15,10 @@ Quick timeline: `grep "^## \[" doc/log.md | head -10`
 
 ---
 
+## [2026-10-04] progress | Nowe repo air-bottle-vehicle-preschool
+
+Utworzono publiczne repozytorium [air-bottle-vehicle-preschool](https://github.com/KrystianMarek/air-bottle-vehicle-preschool) z zapisem sesji o pojeździe napędzanym sprężonym powietrzem (butelka PET 2–2,5 l) dla przedszkolaków.
+
 ## [2026-07-10] progress | LLM Wiki migration complete
 
 Epic `ai-assisted-development-llmwiki` closed (11/11 tickets). `doc/` is now a
